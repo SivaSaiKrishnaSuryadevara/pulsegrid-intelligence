@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, Download, Filter as FilterIcon, LogIn, Users } from 'lucide-react';
 
+import { CreatorDetailDrawer } from '@/components/discover/creator-detail-drawer';
 import { FilterSidebar } from '@/components/discover/filter-sidebar';
 import { VisualCreatorCard } from '@/components/discover/visual-creator-card';
 import { DEFAULT_FILTER_CRITERIA } from '@/lib/discover/constants';
 import { countActiveFilters, describeActiveFilters, matchesFilters } from '@/lib/discover/filters';
 import { fetchAgencyCreditsRemaining, fetchDiscoveryCreators } from '@/lib/discover/queries';
 import { getBrowserSupabaseClient } from '@/lib/supabase/client';
-import type { CreatorCardModel, FilterCriteria } from '@/types/creator';
+import type { ContactUnlockPayload, CreatorCardModel, FilterCriteria } from '@/types/creator';
 
 type LoadState = 'checking-auth' | 'unauthenticated' | 'loading' | 'ready' | 'error';
 
@@ -23,6 +24,9 @@ export default function DiscoverPage() {
   const [rosterIds, setRosterIds] = useState<Set<string>>(new Set());
   const [revealedDeskIds, setRevealedDeskIds] = useState<Set<string>>(new Set());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [inspectingCreatorId, setInspectingCreatorId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +77,11 @@ export default function DiscoverPage() {
   const activeFilterCount = countActiveFilters(filters);
   const activeFilterBadges = useMemo(() => describeActiveFilters(filters), [filters]);
 
+  const inspectingCreator = useMemo(
+    () => allCreators.find((creator) => creator.id === inspectingCreatorId) ?? null,
+    [allCreators, inspectingCreatorId]
+  );
+
   function handleReset(): void {
     setFilters(DEFAULT_FILTER_CRITERIA);
   }
@@ -90,25 +99,76 @@ export default function DiscoverPage() {
   }
 
   function handleInspect(creatorId: string): void {
-    // Step 5 opens the detail drawer keyed off this id.
-    console.info('[discover] inspect requested for creator', creatorId);
+    setInspectingCreatorId(creatorId);
+  }
+
+  /**
+   * The one real unlock call — shared by the grid card's "Reveal Desk"
+   * button and the drawer's "Unlock Direct Desk" button, so both surfaces
+   * always agree on credits/revealed state instead of one being a stale
+   * local simulation.
+   */
+  async function unlockContact(creatorId: string): Promise<ContactUnlockPayload> {
+    const response = await fetch(`/api/creators/${creatorId}/unlock-contact`, { method: 'POST' });
+
+    if (response.status === 403) {
+      return { success: false, creatorId, reason: 'INSUFFICIENT_CREDITS', creditsRemaining };
+    }
+
+    if (!response.ok) {
+      throw new Error(`Unlock request failed (${response.status})`);
+    }
+
+    const payload = (await response.json()) as ContactUnlockPayload;
+    if (payload.success) {
+      setCreditsRemaining(payload.creditsRemaining);
+      setRevealedDeskIds((prev) => new Set(prev).add(creatorId));
+    }
+    return payload;
   }
 
   function handleRevealDesk(creatorId: string): void {
     if (creditsRemaining <= 0 || revealedDeskIds.has(creatorId)) {
       return;
     }
-    // Client-only credit tracking for now — the real unlock endpoint
-    // (server-verified spend + returning the actual contact) is future
-    // work; see the project README's "Next steps".
-    setRevealedDeskIds((prev) => new Set(prev).add(creatorId));
-    setCreditsRemaining((prev) => Math.max(0, prev - 1));
+    unlockContact(creatorId).catch((err) => {
+      console.error('[discover] reveal desk failed', err);
+    });
   }
 
-  function handleExportRoster(): void {
-    // @react-pdf/renderer wiring lands in a later step; for now this just
-    // reflects the real, already-functional roster-selection count.
-    console.info('[discover] export requested for roster', Array.from(rosterIds));
+  async function handleExportRoster(): Promise<void> {
+    if (rosterIds.size === 0 || isExporting) {
+      return;
+    }
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      const response = await fetch('/api/export-roster-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creatorIds: Array.from(rosterIds) }),
+      });
+
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(errorBody?.message ?? `Export failed (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const filenameMatch = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filenameMatch?.[1] ?? 'talent-roster.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   if (loadState === 'checking-auth') {
@@ -184,15 +244,17 @@ export default function DiscoverPage() {
 
             <button
               type="button"
-              onClick={handleExportRoster}
-              disabled={rosterIds.size === 0}
+              onClick={() => void handleExportRoster()}
+              disabled={rosterIds.size === 0 || isExporting}
               className="flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#5457e5] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="h-4 w-4" />
-              Export Roster PDF
+              {isExporting ? 'Exporting…' : 'Export Roster PDF'}
               <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-bold">{rosterIds.size}</span>
             </button>
           </div>
+
+          {exportError && <p className="mt-3 text-xs text-rose-400">{exportError}</p>}
 
           {activeFilterBadges.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -231,6 +293,14 @@ export default function DiscoverPage() {
           )}
         </div>
       </main>
+
+      <CreatorDetailDrawer
+        creator={inspectingCreator}
+        onClose={() => setInspectingCreatorId(null)}
+        creditsRemaining={creditsRemaining}
+        isDeskRevealed={inspectingCreatorId !== null && revealedDeskIds.has(inspectingCreatorId)}
+        onUnlock={unlockContact}
+      />
     </div>
   );
 }

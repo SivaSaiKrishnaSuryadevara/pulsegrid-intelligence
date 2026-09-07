@@ -161,3 +161,58 @@ export async function fetchAgencyCreditsRemaining(supabase: SupabaseClient, prof
 
   return (data as { contact_unlocks_remaining: number }).contact_unlocks_remaining;
 }
+
+// =====================================================================================
+// Brand history (Tab 2 of the detail drawer)
+// =====================================================================================
+
+export interface BlackoutHistoryEntry {
+  id: string;
+  brandName: string;
+  categorySlug: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+interface BlackoutHistoryRow {
+  id: string;
+  brand_name: string;
+  category_slug: string;
+  blackout_start_date: string;
+  blackout_end_date: string;
+}
+
+/**
+ * Every blackout window on file for a creator, past and present, newest
+ * first. This single query backs both the drawer's "chronological timeline
+ * of past brand collaborations" (the full list) and its "active exclusivity"
+ * alerts (the subset where `isActive` is true) — there's no separate
+ * "history" table, so this is the real data behind both, not two different
+ * sources.
+ */
+export async function fetchCreatorBlackoutHistory(
+  supabase: SupabaseClient,
+  creatorId: string
+): Promise<BlackoutHistoryEntry[]> {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from('creator_category_blackouts')
+    .select('id, brand_name, category_slug, blackout_start_date, blackout_end_date')
+    .eq('creator_id', creatorId)
+    .order('blackout_start_date', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load brand history: ${error.message}`);
+  }
+
+  return ((data ?? []) as unknown as BlackoutHistoryRow[]).map((row) => ({
+    id: row.id,
+    brandName: row.brand_name,
+    categorySlug: row.category_slug,
+    startDate: row.blackout_start_date,
+    endDate: row.blackout_end_date,
+    isActive: row.blackout_end_date >= today,
+  }));
+}

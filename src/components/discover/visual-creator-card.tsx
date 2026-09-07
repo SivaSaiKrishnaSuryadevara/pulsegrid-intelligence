@@ -3,7 +3,6 @@
 import {
   AlertTriangle,
   BadgeCheck,
-  Clock,
   DollarSign,
   Eye,
   Lock,
@@ -15,12 +14,13 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  Zap,
   type LucideIcon,
 } from 'lucide-react';
 
 import { Avatar } from '@/components/pseo/avatar';
-import { formatCompactNumber, formatPercent } from '@/lib/format';
+import { getAvailabilityBadge } from '@/lib/discover/availability';
+import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
+import { formatCompactNumber, formatPercent, formatRateRange } from '@/lib/format';
 import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import type { CreatorCardModel, RepType } from '@/types/creator';
 
@@ -202,37 +202,6 @@ export function VisualCreatorCard({
 // Local helpers
 // =====================================================================================
 
-interface AvailabilityBadge {
-  Icon: LucideIcon;
-  label: string;
-  toneClasses: string;
-}
-
-const EMERALD_TONE = 'bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30';
-const AMBER_TONE = 'bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30';
-const ROSE_TONE = 'bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-500/30';
-
-function getAvailabilityBadge(creator: CreatorCardModel): AvailabilityBadge {
-  const [firstConflict] = creator.activeBlackouts;
-  if (firstConflict) {
-    return {
-      Icon: AlertTriangle,
-      label: `Active Conflict: ${humanizeSlug(firstConflict.categorySlug)}`,
-      toneClasses: ROSE_TONE,
-    };
-  }
-  if (creator.bookingStatus === 'blackout_period') {
-    return { Icon: AlertTriangle, label: 'Active Conflict', toneClasses: ROSE_TONE };
-  }
-  if (creator.bookingStatus === 'closed_roster') {
-    return { Icon: AlertTriangle, label: 'Roster Closed', toneClasses: ROSE_TONE };
-  }
-  if (creator.bookingStatus === 'high_demand_lead') {
-    return { Icon: Clock, label: 'High Demand (2-3 wks lead)', toneClasses: AMBER_TONE };
-  }
-  return { Icon: Zap, label: 'Fast Turnaround (< 48 hrs)', toneClasses: EMERALD_TONE };
-}
-
 function Metric({
   icon: Icon,
   label,
@@ -255,25 +224,3 @@ function Metric({
   );
 }
 
-function formatRateRange(minUsd: number | null, maxUsd: number | null): string {
-  if (minUsd === null && maxUsd === null) {
-    return '—';
-  }
-  const format = (n: number) => `$${formatCompactNumber(n)}`;
-  if (minUsd !== null && maxUsd !== null) {
-    return minUsd === maxUsd ? format(minUsd) : `${format(minUsd)}–${format(maxUsd)}`;
-  }
-  return format((minUsd ?? maxUsd) as number);
-}
-
-function humanizeSlug(slug: string): string {
-  return slug
-    .split('-')
-    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
-    .join(' ');
-}
-
-function daysRemaining(endDateIso: string): number {
-  const end = new Date(`${endDateIso}T00:00:00.000Z`).getTime();
-  return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
-}
