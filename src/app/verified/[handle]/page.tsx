@@ -245,7 +245,7 @@ export default async function VerifiedCreatorPage({ params }: VerifiedPageProps)
           </div>
 
           <Link
-            href={`/sign-in?next=${encodeURIComponent(`/verified/${creator.handle}`)}`}
+            href={`/login?next=${encodeURIComponent(`/verified/${creator.handle}`)}`}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#6366F1] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#5457e5]"
           >
             Sign In to Reveal Direct Booking Desk &amp; 90-Day Conflict Radar

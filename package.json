@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "seed": "tsx src/scripts/seed-initial-creators.ts"
+    "seed": "tsx --env-file=.env.local src/scripts/seed-initial-creators.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.23",

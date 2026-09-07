@@ -206,7 +206,7 @@ export default async function DirectoryPage({ params }: DirectoryPageProps) {
               Access Full Directory
             </Link>
             <Link
-              href="/sign-in"
+              href="/login"
               className="rounded-full border border-[#1E2337] px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#6366F1] hover:text-white"
             >
               Sign In

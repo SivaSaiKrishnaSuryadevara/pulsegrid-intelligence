@@ -70,7 +70,7 @@ export default async function CommitteeWorkspacePage({ params }: CommitteePagePr
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/sign-in?next=/committee/${slug}`);
+    redirect(`/login?next=/committee/${slug}`);
   }
 
   // committee_workspaces_select_owner_or_member (001_init.sql) already

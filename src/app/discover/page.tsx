@@ -182,7 +182,7 @@ export default function DiscoverPage() {
           The discovery cockpit is available to signed-in agency accounts only.
         </p>
         <Link
-          href="/sign-in?next=/discover"
+          href="/login?next=/discover"
           className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#6366F1] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5457e5]"
         >
           Sign In
