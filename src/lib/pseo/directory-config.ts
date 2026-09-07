@@ -12,7 +12,11 @@
 import type { EnterpriseType, MetroHub, PrimaryNiche } from '@/types/creator';
 
 export const SITE_NAME = 'PulseGrid Intelligence';
-export const SITE_URL = 'https://pulsegrid.io';
+// Falls back to the production domain so build-time SEO generation
+// (sitemap, canonical URLs) never breaks on a missing env var; set
+// NEXT_PUBLIC_SITE_URL per-environment so staging/preview deploys don't
+// advertise pulsegrid.io URLs for content they didn't actually serve.
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pulsegrid.io';
 
 // =====================================================================================
 // Full label dictionaries (cover every enum value, used generically across the app —

@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/*
+ * The app's dark palette (#0B0D17 canvas, #131728 cards, #1E2337 borders,
+ * #6366F1 accent) is applied directly via Tailwind arbitrary-value classes
+ * throughout src/app and src/components (e.g. `bg-[#0B0D17]`), not through
+ * theme tokens here — so this file only needs to cover page-wide defaults.
+ */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0b0d17;
+  color: #f1f5f9;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

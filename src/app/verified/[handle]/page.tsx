@@ -166,7 +166,6 @@ export default async function VerifiedCreatorPage({ params }: VerifiedPageProps)
     <main className="min-h-screen bg-[#0B0D17] text-slate-100">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 

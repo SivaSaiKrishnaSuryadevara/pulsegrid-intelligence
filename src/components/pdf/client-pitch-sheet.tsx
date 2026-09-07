@@ -270,11 +270,11 @@ export function ClientPitchSheet({
   return (
     <Document title={`${campaignTitle} — ${agencyName}`} author={agencyName}>
       {pageList.map((pageCreators, pageIndex) => (
-        // eslint-disable-next-line react/no-array-index-key
         <Page key={pageIndex} size="A4" style={styles.page}>
           <View style={styles.headerRow}>
             <View>
               {agencyLogoUrl ? (
+                // eslint-disable-next-line jsx-a11y/alt-text -- this is @react-pdf/renderer's Image (a PDF layout primitive), not next/image or an HTML <img>; it has no alt prop, PDF accessibility works via PDF/UA tagging instead
                 <Image src={agencyLogoUrl} style={styles.agencyLogo} />
               ) : (
                 <Text style={styles.agencyName}>{agencyName}</Text>
@@ -291,6 +291,7 @@ export function ClientPitchSheet({
               <View key={creator.id} style={styles.card} wrap={false}>
                 <View style={styles.cardHeaderRow}>
                   {creator.avatarUrl ? (
+                    // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image, not an HTML <img>; see note above
                     <Image src={creator.avatarUrl} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarFallback}>
@@ -339,7 +340,6 @@ export function ClientPitchSheet({
                 {creator.culturalFitBullets.length > 0 && (
                   <View style={styles.bulletsBlock}>
                     {creator.culturalFitBullets.map((bullet, index) => (
-                      // eslint-disable-next-line react/no-array-index-key
                       <Text key={index} style={styles.bulletLine}>
                         • {bullet}
                       </Text>
