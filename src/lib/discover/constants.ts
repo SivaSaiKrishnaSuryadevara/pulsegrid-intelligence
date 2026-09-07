@@ -26,6 +26,7 @@ export const LANGUAGE_OPTIONS: readonly string[] = [
   'Urdu',
   'Malayalam',
   'Kannada',
+  'English',
 ];
 
 export const ENGAGEMENT_RATE_BOUNDS = { min: 1, max: 15, step: 0.1 } as const;

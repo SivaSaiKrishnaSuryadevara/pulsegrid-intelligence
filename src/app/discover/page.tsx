@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Download, Filter as FilterIcon, LogIn, Users } from 'lucide-react';
+import { Activity, AlertCircle, Building2, Download, Filter as FilterIcon, LogIn, Users } from 'lucide-react';
 
 import { CreatorDetailDrawer } from '@/components/discover/creator-detail-drawer';
 import { FilterSidebar } from '@/components/discover/filter-sidebar';
 import { VisualCreatorCard } from '@/components/discover/visual-creator-card';
 import { DEFAULT_FILTER_CRITERIA } from '@/lib/discover/constants';
 import { countActiveFilters, describeActiveFilters, matchesFilters } from '@/lib/discover/filters';
-import { fetchAgencyCreditsRemaining, fetchDiscoveryCreators } from '@/lib/discover/queries';
+import { fetchAgencyProfile, fetchDiscoveryCreators } from '@/lib/discover/queries';
 import { getBrowserSupabaseClient } from '@/lib/supabase/client';
 import type { ContactUnlockPayload, CreatorCardModel, FilterCriteria } from '@/types/creator';
 
@@ -20,6 +20,7 @@ export default function DiscoverPage() {
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [allCreators, setAllCreators] = useState<CreatorCardModel[]>([]);
   const [creditsRemaining, setCreditsRemaining] = useState(0);
+  const [agencyName, setAgencyName] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterCriteria>(DEFAULT_FILTER_CRITERIA);
   const [rosterIds, setRosterIds] = useState<Set<string>>(new Set());
   const [revealedDeskIds, setRevealedDeskIds] = useState<Set<string>>(new Set());
@@ -45,14 +46,15 @@ export default function DiscoverPage() {
 
         if (!cancelled) setLoadState('loading');
 
-        const [creators, credits] = await Promise.all([
+        const [creators, agencyProfile] = await Promise.all([
           fetchDiscoveryCreators(supabase),
-          fetchAgencyCreditsRemaining(supabase, user.id),
+          fetchAgencyProfile(supabase, user.id),
         ]);
 
         if (cancelled) return;
         setAllCreators(creators);
-        setCreditsRemaining(credits);
+        setCreditsRemaining(agencyProfile.creditsRemaining);
+        setAgencyName(agencyProfile.agencyName);
         setLoadState('ready');
       } catch (err) {
         if (cancelled) return;
@@ -183,7 +185,7 @@ export default function DiscoverPage() {
         </p>
         <Link
           href="/login?next=/discover"
-          className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#6366F1] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5457e5]"
+          className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#6366F1] px-5 py-2.5 text-sm font-semibold text-white transition ease-out hover:bg-[#5457e5]"
         >
           Sign In
         </Link>
@@ -202,23 +204,26 @@ export default function DiscoverPage() {
   const isLoadingCreators = loadState === 'loading';
 
   return (
-    <div className="flex min-h-screen bg-[#0B0D17] text-slate-100">
-      <FilterSidebar
-        value={filters}
-        onChange={setFilters}
-        onReset={handleReset}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+    <div className="min-h-screen bg-[#0B0D17] text-slate-100">
+      <TopNavbar agencyName={agencyName} creditsRemaining={creditsRemaining} />
 
-      <main className="min-w-0 flex-1">
-        <div className="sticky top-0 z-10 border-b border-[#1E2337] bg-[#0B0D17]/95 px-4 py-4 backdrop-blur sm:px-6">
+      <div className="flex">
+        <FilterSidebar
+          value={filters}
+          onChange={setFilters}
+          onReset={handleReset}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+
+        <main className="min-w-0 flex-1">
+          <div className="sticky top-14 z-10 border-b border-[#1E2337] bg-[#0B0D17]/95 px-4 py-4 backdrop-blur sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#1E2337] px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-[#6366F1] lg:hidden"
+                className="flex items-center gap-1.5 rounded-lg border border-[#1E2337] px-3 py-1.5 text-xs font-semibold text-slate-300 transition ease-out hover:border-[#6366F1] lg:hidden"
               >
                 <FilterIcon className="h-3.5 w-3.5" />
                 Filters
@@ -246,7 +251,7 @@ export default function DiscoverPage() {
               type="button"
               onClick={() => void handleExportRoster()}
               disabled={rosterIds.size === 0 || isExporting}
-              className="flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#5457e5] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white transition ease-out hover:bg-[#5457e5] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="h-4 w-4" />
               {isExporting ? 'Exporting…' : 'Export Roster PDF'}
@@ -292,7 +297,8 @@ export default function DiscoverPage() {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
 
       <CreatorDetailDrawer
         creator={inspectingCreator}
@@ -308,6 +314,29 @@ export default function DiscoverPage() {
 // =====================================================================================
 // Local presentational helpers
 // =====================================================================================
+
+function TopNavbar({ agencyName, creditsRemaining }: { agencyName: string | null; creditsRemaining: number }) {
+  return (
+    <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#1E2337] bg-[#0B0D17]/95 px-4 backdrop-blur sm:px-6">
+      <div className="flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#6366F1]">
+          <Activity className="h-4 w-4 text-white" />
+        </div>
+        <span className="text-sm font-semibold tracking-tight text-white">PulseGrid</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="hidden items-center gap-1.5 rounded-full border border-[#1E2337] bg-[#131728] px-3 py-1.5 text-xs font-medium text-slate-300 sm:flex">
+          <Building2 className="h-3.5 w-3.5 text-slate-500" />
+          {agencyName ?? 'Agency Workspace'}
+        </span>
+        <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300">
+          ⚡ {creditsRemaining} Credit{creditsRemaining === 1 ? '' : 's'}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function GridSkeleton() {
   return (
@@ -333,7 +362,7 @@ function EmptyState({ hasActiveFilters, onClearFilters }: { hasActiveFilters: bo
         <button
           type="button"
           onClick={onClearFilters}
-          className="mt-5 rounded-lg border border-[#1E2337] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#6366F1] hover:text-white"
+          className="mt-5 rounded-lg border border-[#1E2337] px-4 py-2 text-sm font-semibold text-slate-300 transition ease-out hover:border-[#6366F1] hover:text-white"
         >
           Clear Filters
         </button>

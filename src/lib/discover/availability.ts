@@ -15,9 +15,12 @@ export interface AvailabilityBadge {
   toneClasses: string;
 }
 
-export const EMERALD_TONE = 'bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30';
-export const AMBER_TONE = 'bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30';
-export const ROSE_TONE = 'bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-500/30';
+export const EMERALD_TONE = 'bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/40';
+export const AMBER_TONE = 'bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/40';
+export const ROSE_TONE = 'bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-500/40';
+
+/** Distinct from AMBER_TONE — used for the detailed exclusivity-hold callout (brand + days), not the compact status chip. */
+export const EXCLUSIVITY_TONE = 'border border-amber-500/30 bg-amber-500/10 text-amber-300';
 
 export function getAvailabilityBadge(creator: CreatorCardModel): AvailabilityBadge {
   const [firstConflict] = creator.activeBlackouts;

@@ -88,7 +88,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[300px] flex-col overflow-y-auto border-r border-[#1E2337] bg-[#0B0D17] transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[300px] flex-col overflow-y-auto border-r border-[#1E2337] bg-[#0B0D17] transition-transform duration-200 ease-out lg:sticky lg:top-14 lg:z-0 lg:h-[calc(100vh-3.5rem)] lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -134,7 +134,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
           </div>
 
           <FilterSection title="Metro Hub">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {METRO_HUBS.map((metro) => (
                 <ChipButton
                   key={metro}
@@ -147,7 +147,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
           </FilterSection>
 
           <FilterSection title="Primary Niche">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {PRIMARY_NICHES.map((niche) => (
                 <ChipButton
                   key={niche}
@@ -160,7 +160,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
           </FilterSection>
 
           <FilterSection title="Language / Dialect">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {LANGUAGE_OPTIONS.map((language) => (
                 <ChipButton
                   key={language}
@@ -185,7 +185,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
               {AVAILABILITY_MODE_OPTIONS.map((option) => (
                 <label
                   key={option.value}
-                  className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#1E2337] bg-[#131728] p-2.5 text-xs transition hover:border-[#6366F1]/50"
+                  className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#1E2337] bg-[#131728] p-2.5 text-xs transition ease-out hover:border-[#6366F1]/50"
                 >
                   <input
                     type="radio"
@@ -228,7 +228,7 @@ export function FilterSidebar({ value, onChange, onReset, isOpen, onClose }: Fil
             type="button"
             onClick={onReset}
             disabled={activeFilterCount === 0}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#1E2337] px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-[#6366F1] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#1E2337] px-3 py-2 text-xs font-semibold text-slate-300 transition ease-out hover:border-[#6366F1] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Reset All
@@ -258,9 +258,9 @@ function ChipButton({ label, isActive, onClick }: { label: string; isActive: boo
       type="button"
       onClick={onClick}
       aria-pressed={isActive}
-      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ease-out ${
         isActive
-          ? 'border-[#6366F1] bg-[#6366F1]/15 text-[#a5b4fc]'
+          ? 'border-[#6366F1]/70 bg-[#6366F1]/15 text-[#a5b4fc] shadow-[0_0_10px_rgba(99,102,241,0.35)]'
           : 'border-[#1E2337] bg-[#131728] text-slate-400 hover:border-[#6366F1]/50 hover:text-slate-200'
       }`}
     >
@@ -276,10 +276,10 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (chec
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#6366F1]' : 'bg-[#1E2337]'}`}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ease-out ${checked ? 'bg-[#6366F1]' : 'bg-[#1E2337]'}`}
     >
       <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ease-out ${
           checked ? 'translate-x-4' : 'translate-x-0.5'
         }`}
       />

@@ -3,7 +3,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import {
-  AlertTriangle,
   BadgeCheck,
   Check,
   Copy,
@@ -21,7 +20,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/pseo/avatar';
-import { getAvailabilityBadge } from '@/lib/discover/availability';
+import { EXCLUSIVITY_TONE, getAvailabilityBadge } from '@/lib/discover/availability';
 import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
 import { NICHE_DISPLAY_LABELS } from '@/lib/discover/constants';
 import { type BlackoutHistoryEntry, fetchCreatorBlackoutHistory } from '@/lib/discover/queries';
@@ -164,7 +163,7 @@ export function CreatorDetailDrawer({
     <Dialog.Root open={creator !== null} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-40 bg-black/60 transition-opacity data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+          className="fixed inset-0 z-40 bg-black/60 transition-opacity ease-out data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
         />
         <Dialog.Content
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-y-auto border-l border-[#1E2337] bg-[#0B0D17] text-slate-100 shadow-2xl transition-transform duration-300 ease-out data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 sm:max-w-lg"
@@ -241,7 +240,7 @@ function DrawerHeader({ creator, onClose }: { creator: CreatorCardModel; onClose
           <div className="relative shrink-0">
             <Avatar name={creator.displayName} url={creator.avatarUrl} size={56} />
             {creator.isVerified && (
-              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#6366F1] ring-2 ring-[#0B0D17]">
+              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#6366F1] shadow-[0_0_0_1px_rgba(99,102,241,0.5)] ring-2 ring-[#0B0D17]">
                 <BadgeCheck className="h-3 w-3 text-white" strokeWidth={2.5} />
               </span>
             )}
@@ -264,7 +263,7 @@ function DrawerHeader({ creator, onClose }: { creator: CreatorCardModel; onClose
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-full p-1.5 text-slate-400 transition hover:bg-[#131728] hover:text-white"
+            className="shrink-0 rounded-full p-1.5 text-slate-400 transition ease-out hover:bg-[#131728] hover:text-white"
             aria-label="Close intelligence drawer"
           >
             <X className="h-4 w-4" />
@@ -286,7 +285,7 @@ function TabTrigger({ value, label }: { value: string; label: string }) {
   return (
     <Tabs.Trigger
       value={value}
-      className="flex-1 border-b-2 border-transparent px-3 py-3 text-xs font-semibold text-slate-500 transition hover:text-slate-300 data-[state=active]:border-[#6366F1] data-[state=active]:text-white"
+      className="flex-1 border-b-2 border-transparent px-3 py-3 text-xs font-semibold text-slate-500 transition ease-out hover:text-slate-300 data-[state=active]:border-[#6366F1] data-[state=active]:text-white"
     >
       {label}
     </Tabs.Trigger>
@@ -416,14 +415,11 @@ function BrandHistoryTab({ entries, loadError }: { entries: BlackoutHistoryEntry
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Exclusivity Radar</h3>
           <div className="space-y-2">
             {activeEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
-              >
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div key={entry.id} className={`flex items-start gap-2 rounded-xl p-3 text-xs ${EXCLUSIVITY_TONE}`}>
+                <span aria-hidden="true">⚠️</span>
                 <span>
-                  🔴 Active Exclusivity: <strong>{humanizeSlug(entry.categorySlug)}</strong> — {entry.brandName} —{' '}
-                  {daysRemaining(entry.endDate)} days remaining
+                  Exclusivity Hold: <strong>{entry.brandName}</strong> · {humanizeSlug(entry.categorySlug)} ·{' '}
+                  {daysRemaining(entry.endDate)} days left
                 </span>
               </div>
             ))}
@@ -524,7 +520,7 @@ function TalentDeskTab({
         type="button"
         onClick={onUnlockClick}
         disabled={unlockState === 'unlocking' || creditsRemaining <= 0}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#6366F1] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#5457e5] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#6366F1] px-4 py-3 text-sm font-semibold text-white transition ease-out hover:bg-[#5457e5] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Lock className="h-4 w-4" />
         {unlockState === 'unlocking'
@@ -575,7 +571,7 @@ function ContactRow({ label, value }: { label: string; value: string | null }) {
           type="button"
           onClick={handleCopy}
           aria-label={`Copy ${label.toLowerCase()}`}
-          className="shrink-0 rounded-lg border border-[#1E2337] p-2 text-slate-400 transition hover:border-[#6366F1] hover:text-white"
+          className="shrink-0 rounded-lg border border-[#1E2337] p-2 text-slate-400 transition ease-out hover:border-[#6366F1] hover:text-white"
         >
           {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
         </button>

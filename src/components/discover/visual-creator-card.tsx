@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AlertTriangle,
   BadgeCheck,
   DollarSign,
   Eye,
@@ -18,8 +17,8 @@ import {
 } from 'lucide-react';
 
 import { Avatar } from '@/components/pseo/avatar';
-import { getAvailabilityBadge } from '@/lib/discover/availability';
-import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
+import { EXCLUSIVITY_TONE, getAvailabilityBadge } from '@/lib/discover/availability';
+import { daysRemaining } from '@/lib/discover/blackout-helpers';
 import { formatCompactNumber, formatPercent, formatRateRange } from '@/lib/format';
 import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import type { CreatorCardModel, RepType } from '@/types/creator';
@@ -58,13 +57,13 @@ export function VisualCreatorCard({
   const canReveal = !isDeskRevealed && creditsRemaining > 0;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-[#1E2337] bg-[#131728] transition hover:border-[#6366F1]/50">
+    <article className="flex flex-col overflow-hidden rounded-2xl border border-[#1E2337] bg-[#131728] transition-all ease-out hover:border-slate-700/80">
       {/* Header */}
       <div className="flex items-start gap-3 p-4">
         <div className="relative shrink-0">
           <Avatar name={creator.displayName} url={creator.avatarUrl} size={44} />
           {creator.isVerified && (
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#6366F1] ring-2 ring-[#131728]">
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#6366F1] shadow-[0_0_0_1px_rgba(99,102,241,0.5)] ring-2 ring-[#131728]">
               <BadgeCheck className="h-3 w-3 text-white" strokeWidth={2.5} />
             </span>
           )}
@@ -105,20 +104,23 @@ export function VisualCreatorCard({
       {/* Media strip — no per-reel data model exists yet (no thumbnails, no
           individual view counts), so all three tiles surface the creator's
           real aggregate avg_reel_views rather than three invented numbers. */}
-      <div className="mt-3 grid grid-cols-3 gap-1 px-4">
+      <div className="mt-3 grid grid-cols-3 gap-1.5 px-4">
         {[0, 1, 2].map((index) => (
           <div
             key={index}
-            className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-gradient-to-br from-[#1E2337] to-[#0B0D17]"
+            className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-gradient-to-br from-[#1E2337] via-[#161a2c] to-[#0B0D17] ring-1 ring-inset ring-white/[0.03] transition duration-200 ease-out hover:ring-white/10"
           >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.16),transparent_55%)]" />
+
             <div className="flex h-full items-center justify-center">
-              <Play className="h-5 w-5 text-[#6366F1]/70" />
-            </div>
-            <div className="absolute inset-0 flex items-end justify-center bg-black/60 p-1.5 opacity-0 transition group-hover:opacity-100">
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-white">
-                <Eye className="h-3 w-3" />
-                {formatCompactNumber(creator.avgReelViews)}
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 ring-1 ring-white/10 backdrop-blur-sm transition duration-200 ease-out group-hover:scale-110 group-hover:bg-[#6366F1]/80 group-hover:ring-[#6366F1]/50">
+                <Play className="h-3.5 w-3.5 fill-white text-white" />
               </span>
+            </div>
+
+            <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <Play className="h-2.5 w-2.5 fill-white text-white" />
+              {formatCompactNumber(creator.avgReelViews)}
             </div>
           </div>
         ))}
@@ -146,13 +148,13 @@ export function VisualCreatorCard({
         </span>
       </div>
 
-      {/* Active conflict warning */}
+      {/* Active exclusivity-hold warning */}
       {primaryConflict && (
-        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <div className={`mx-4 mt-3 flex items-start gap-2 rounded-lg p-2.5 text-xs ${EXCLUSIVITY_TONE}`}>
+          <span aria-hidden="true">⚠️</span>
           <span>
-            Locked: <strong>{primaryConflict.brandName}</strong> ({humanizeSlug(primaryConflict.categorySlug)}) —{' '}
-            {daysRemaining(primaryConflict.endDate)}d remaining
+            Exclusivity Hold: <strong>{primaryConflict.brandName}</strong> · {daysRemaining(primaryConflict.endDate)} days
+            left
           </span>
         </div>
       )}
@@ -163,7 +165,7 @@ export function VisualCreatorCard({
           type="button"
           onClick={() => onToggleRoster(creator.id)}
           aria-pressed={isOnRoster}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ease-out ${
             isOnRoster
               ? 'bg-[#6366F1] text-white hover:bg-[#5457e5]'
               : 'border border-[#1E2337] text-slate-300 hover:border-[#6366F1] hover:text-white'
@@ -175,7 +177,7 @@ export function VisualCreatorCard({
         <button
           type="button"
           onClick={() => onInspect(creator.id)}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-[#1E2337] px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-[#6366F1] hover:text-white"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-[#1E2337] px-3 py-2 text-xs font-semibold text-slate-300 transition ease-out hover:border-[#6366F1] hover:text-white"
         >
           <Radar className="h-3.5 w-3.5" />
           Inspect
@@ -188,7 +190,7 @@ export function VisualCreatorCard({
           type="button"
           onClick={() => onRevealDesk(creator.id)}
           disabled={!canReveal}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0B0D17] px-3 py-2 text-xs font-semibold text-[#a5b4fc] transition hover:bg-[#1E2337] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0B0D17] px-3 py-2 text-xs font-semibold text-[#a5b4fc] transition ease-out hover:bg-[#1E2337] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Lock className="h-3.5 w-3.5" />
           {isDeskRevealed ? 'Desk Revealed' : `Reveal Desk (${creditsRemaining} left)`}

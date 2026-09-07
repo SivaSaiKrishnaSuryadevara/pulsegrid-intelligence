@@ -148,18 +148,24 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
   });
 }
 
-export async function fetchAgencyCreditsRemaining(supabase: SupabaseClient, profileId: string): Promise<number> {
+export interface AgencyProfileSummary {
+  creditsRemaining: number;
+  agencyName: string | null;
+}
+
+export async function fetchAgencyProfile(supabase: SupabaseClient, profileId: string): Promise<AgencyProfileSummary> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('contact_unlocks_remaining')
+    .select('contact_unlocks_remaining, agency_name')
     .eq('id', profileId)
     .maybeSingle();
 
   if (error || !data) {
-    return 0;
+    return { creditsRemaining: 0, agencyName: null };
   }
 
-  return (data as { contact_unlocks_remaining: number }).contact_unlocks_remaining;
+  const row = data as { contact_unlocks_remaining: number; agency_name: string | null };
+  return { creditsRemaining: row.contact_unlocks_remaining, agencyName: row.agency_name };
 }
 
 // =====================================================================================
