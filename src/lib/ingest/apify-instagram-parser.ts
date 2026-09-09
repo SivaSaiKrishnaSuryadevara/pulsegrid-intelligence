@@ -32,7 +32,7 @@
  *    accurate rather than getting a fabricated number.
  */
 
-import { ENGAGEMENT_RATE_BOUNDS } from '@/lib/discover/constants';
+import { DJ_GENRE_TAG_OPTIONS, ENGAGEMENT_RATE_BOUNDS, LANGUAGE_OPTIONS } from '@/lib/discover/constants';
 import { InstagramIngestWorker, type ScrapedCreatorPayload, type ScrapedPost } from '@/workers/ingest-worker';
 import {
   METRO_HUBS,
@@ -209,6 +209,49 @@ function buildDefaultEntityDetails(entityType: EntityType): EntityDetails {
 }
 
 // =====================================================================================
+// DJ genre + dialect inference
+// =====================================================================================
+
+/**
+ * Keyed by the exact DJ_GENRE_TAG_OPTIONS label (iterated from that constant
+ * below, not retyped as a parallel list, so a future edit to the options
+ * can't silently drift out of sync with these patterns). `language` is the
+ * exact LANGUAGE_OPTIONS label the genre implies, where one exists — an
+ * approximation (a Bollywood-genre DJ isn't necessarily a Hindi speaker),
+ * but the best available signal from bios that rarely state language
+ * directly. Western/generic genres (EDM, Hip-Hop, Afrobeats) imply none.
+ */
+const GENRE_TAG_SIGNAL: Record<string, { language: string | null; patterns: RegExp[] }> = {
+  Bollywood: { language: 'Hindi', patterns: [/\bbollywood\b/i] },
+  'Bhangra / Punjabi': { language: 'Punjabi', patterns: [/\bbhangra\b/i, /\bpunjabi\b/i] },
+  'Garba / Raas': { language: 'Gujarati', patterns: [/\bgarba\b/i, /\braas\b/i] },
+  'Sufi / Qawwali': { language: 'Urdu', patterns: [/\bsufi\b/i, /\bqawwali\b/i] },
+  'Tollywood Mass': { language: 'Telugu', patterns: [/\btollywood\b/i] },
+  EDM: { language: null, patterns: [/\bedm\b/i] },
+  'Hip-Hop / Top 40': { language: null, patterns: [/\bhip.?hop\b/i, /\btop\s?40\b/i] },
+  Afrobeats: { language: null, patterns: [/\bafrobeats?\b/i] },
+};
+
+export function inferGenreTags(signalText: string): string[] {
+  return DJ_GENRE_TAG_OPTIONS.filter((tag) => GENRE_TAG_SIGNAL[tag]?.patterns.some((p) => p.test(signalText)) ?? false);
+}
+
+/** Direct language self-mentions ("Hindi/English DJ", "Fluent in Tamil") union'd with the genre-implied languages above. */
+export function inferSecondaryLanguages(signalText: string): string[] {
+  const languages = new Set<string>();
+  for (const language of LANGUAGE_OPTIONS) {
+    if (new RegExp(`\\b${language}\\b`, 'i').test(signalText)) languages.add(language);
+  }
+  for (const tag of DJ_GENRE_TAG_OPTIONS) {
+    const signal = GENRE_TAG_SIGNAL[tag];
+    if (signal?.language && signal.patterns.some((p) => p.test(signalText))) {
+      languages.add(signal.language);
+    }
+  }
+  return Array.from(languages);
+}
+
+// =====================================================================================
 // Telemetry derived from latestPosts
 // =====================================================================================
 
@@ -337,7 +380,8 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
   }
   const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
   const bio = raw.biography ?? '';
-  const inferredType = inferEntityType(`${raw.fullName ?? ''}\n${bio}`);
+  const signalText = `${raw.fullName ?? ''}\n${bio}`;
+  const inferredType = inferEntityType(signalText);
   if (inferredType === null && opts.requireBioSignal) {
     return { ok: false, identifier: handle, error: 'no event-industry signal found in bio — skipped' };
   }
@@ -362,6 +406,10 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
     ...buildDefaultEntityDetails(entityType),
     mediaProofs: extractMediaProofs(raw.latestPosts),
   };
+  if (entityDetails.kind === 'local_dj') {
+    entityDetails.genreTags = inferGenreTags(signalText);
+  }
+  const secondaryLanguages = inferSecondaryLanguages(signalText);
 
   const engagementRate = computeEngagementRate(raw.latestPosts, followerCount);
   const rateRange = estimateRateRangeUsd(followerCount, engagementRate);
@@ -374,6 +422,7 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
     externalUrl: raw.externalUrl ?? null,
     entityType,
     entityDetails,
+    secondaryLanguages,
     primaryMetro: opts.metro,
     primaryNiche: ENTITY_TYPE_TO_DEFAULT_NICHE[entityType],
     followerCount,
