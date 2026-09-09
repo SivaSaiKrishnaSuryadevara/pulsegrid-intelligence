@@ -1,3 +1,5 @@
+import { toDisplayableMediaUrl } from '@/lib/media-proxy';
+
 interface AvatarProps {
   name: string;
   url: string | null;
@@ -9,7 +11,10 @@ interface AvatarProps {
  * `avatar_url` is on file. Uses a plain `<img>` rather than `next/image`:
  * this project has no `next.config` remote-pattern allowlist configured yet
  * for third-party avatar hosts (e.g. Instagram's CDN), which `next/image`
- * requires at build time.
+ * requires at build time. Instagram-hosted URLs are routed through
+ * `/api/media-proxy` (see that route's header comment) — a direct
+ * `<img src>` to Instagram's CDN is unconditionally blocked by the browser
+ * (Cross-Origin-Resource-Policy: same-origin on their response).
  */
 export function Avatar({ name, url, size = 48 }: AvatarProps) {
   const dimension = `${size}px`;
@@ -18,7 +23,7 @@ export function Avatar({ name, url, size = 48 }: AvatarProps) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={url}
+        src={toDisplayableMediaUrl(url)}
         alt={name}
         style={{ width: dimension, height: dimension }}
         className="shrink-0 rounded-full object-cover"
