@@ -116,7 +116,7 @@ const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[
   },
   {
     entityType: 'dance_troupe',
-    patterns: [/\bchoreograph\w*\b/i, /\bdance\s+(troupe|academy|company|crew|team)\b/i],
+    patterns: [/\bchoreograph\w*\b/i, /\bballet\b/i, /\bdance\s+(troupe|academy|company|crew|team|studio|collective)\b/i],
   },
   {
     entityType: 'stage_emcee',
@@ -129,7 +129,7 @@ const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[
       /\bwedding\s+planner\b/i,
       /\bevent\s+coordinat\w*\b/i,
       /\bdecor\s+(rentals?|hire|design)\b/i,
-      /\bevent\s+(design|production|rentals?)\b/i,
+      /\bevent\s+(design|production|producers?|rentals?)\b/i,
     ],
   },
   {
@@ -163,8 +163,17 @@ const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[
  * first) despite "emcee" being both accounts' own primary self-
  * description, appearing well before the passing "DJ" mention — bios
  * conventionally lead with the role the person considers primary.
+ *
+ * NFKD-normalizes first — stylized bio fonts ("𝐌𝐮𝐬𝐢𝐜𝐚𝐥 𝐞𝐯𝐞𝐧𝐭 𝐩𝐫𝐨𝐝𝐮𝐜𝐞𝐫", a
+ * popular Instagram bio-generator trick) are Unicode Mathematical
+ * Alphanumeric Symbols, not the plain Latin letters these patterns match —
+ * confirmed a real account ("Ultra Entertainments") slipped through
+ * undetected for exactly this reason. NFKD has a compatibility
+ * decomposition back to the base letter for that whole block, so this is
+ * one line, not a hand-rolled lookup table.
  */
-export function inferEntityType(signalText: string): EntityType | null {
+export function inferEntityType(rawSignalText: string): EntityType | null {
+  const signalText = rawSignalText.normalize('NFKD');
   let bestType: EntityType | null = null;
   let bestIndex = Infinity;
   for (const rule of ENTITY_TYPE_KEYWORD_RULES) {
@@ -232,12 +241,15 @@ const GENRE_TAG_SIGNAL: Record<string, { language: string | null; patterns: RegE
   Afrobeats: { language: null, patterns: [/\bafrobeats?\b/i] },
 };
 
-export function inferGenreTags(signalText: string): string[] {
+/** NFKD-normalizes first — see inferEntityType for why (stylized bio fonts). */
+export function inferGenreTags(rawSignalText: string): string[] {
+  const signalText = rawSignalText.normalize('NFKD');
   return DJ_GENRE_TAG_OPTIONS.filter((tag) => GENRE_TAG_SIGNAL[tag]?.patterns.some((p) => p.test(signalText)) ?? false);
 }
 
-/** Direct language self-mentions ("Hindi/English DJ", "Fluent in Tamil") union'd with the genre-implied languages above. */
-export function inferSecondaryLanguages(signalText: string): string[] {
+/** Direct language self-mentions ("Hindi/English DJ", "Fluent in Tamil") union'd with the genre-implied languages above. NFKD-normalizes first — see inferEntityType. */
+export function inferSecondaryLanguages(rawSignalText: string): string[] {
+  const signalText = rawSignalText.normalize('NFKD');
   const languages = new Set<string>();
   for (const language of LANGUAGE_OPTIONS) {
     if (new RegExp(`\\b${language}\\b`, 'i').test(signalText)) languages.add(language);
