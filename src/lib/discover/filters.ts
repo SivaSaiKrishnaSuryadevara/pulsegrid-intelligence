@@ -39,9 +39,21 @@ export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriter
   if (criteria.secondaryLanguages.length > 0) {
     // The dialect/genre chip doubles as the DJ genre-tag filter (same
     // FilterCriteria field, different comparison target) — see
-    // DJ_GENRE_TAG_OPTIONS in constants.ts.
-    const tags =
-      creator.entityDetails.kind === 'local_dj' ? creator.entityDetails.genreTags : creator.secondaryLanguages;
+    // DJ_GENRE_TAG_OPTIONS in constants.ts. Which target applies has to be
+    // decided the same way the filter strip decides which OPTION LIST to
+    // show (isDjSelected there, mirrored here as djMode) — NOT by each
+    // creator's own type. Deciding per-creator meant a local_dj row was
+    // always checked against genreTags even when the selected values came
+    // from the language list (the default "All Production" view shows
+    // language options, since 'local_dj' isn't among selectedEntityTypes
+    // yet), making any DJ's real secondaryLanguages data unreachable
+    // through that view no matter how much of it existed.
+    const djMode = criteria.selectedEntityTypes.includes('local_dj');
+    const tags = djMode
+      ? creator.entityDetails.kind === 'local_dj'
+        ? creator.entityDetails.genreTags
+        : []
+      : creator.secondaryLanguages;
     const matchesRequestedTag = criteria.secondaryLanguages.some((tag) => tags.includes(tag));
     if (!matchesRequestedTag) {
       return false;
