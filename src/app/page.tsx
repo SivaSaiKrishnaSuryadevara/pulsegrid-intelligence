@@ -1,4 +1,18 @@
-import { AlertTriangle, Check, Music2, Mic2, PartyPopper, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Banknote,
+  Check,
+  ClipboardList,
+  Mail,
+  Music2,
+  Mic2,
+  PartyPopper,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
+  X,
+} from 'lucide-react';
 import { Fragment } from 'react';
 
 import { GovernanceFooter } from '@/components/discover/governance-footer';
@@ -55,6 +69,37 @@ const COMPARISON_ROWS = [
   { old: 'No way to tell if they’re already booked for a rival event', pulsegrid: 'Exclusivity Radar flags active category conflicts' },
   { old: 'Cold DMs with no context', pulsegrid: 'Deterministic Outreach Brief generated from your event details' },
   { old: 'A different vendor list for every entity type', pulsegrid: 'DJs, dance troupes, emcees, planners, and creators — one roster' },
+] as const;
+
+// Not live yet — deliberately marked "Coming soon" below rather than
+// presented as shipped functionality (see the section eyebrow). Real
+// today: search/filter, the Full Dossier, Exclusivity Radar, and roster
+// export, all covered elsewhere on this page.
+const WORKFLOW_BLOCKS = [
+  {
+    color: 'bg-violet-100',
+    icon: ClipboardList,
+    title: 'Manage',
+    body: 'Every desk relationship in one place — notes, status, and history, out of your head and off a spreadsheet.',
+  },
+  {
+    color: 'bg-orange-100',
+    icon: Mail,
+    title: 'Outreach',
+    body: 'Deterministic Outreach Briefs today; full inbox-style bulk outreach and follow-up tracking next.',
+  },
+  {
+    color: 'bg-pink-100',
+    icon: TrendingUp,
+    title: 'Track',
+    body: 'Every booking from first contact to show night, tracked automatically instead of chased manually.',
+  },
+  {
+    color: 'bg-rose-100',
+    icon: Banknote,
+    title: 'Pay',
+    body: 'Deposits and final payment without the invoice back-and-forth — no separate accounting tool needed.',
+  },
 ] as const;
 
 const FAQ_ITEMS = [
@@ -252,6 +297,33 @@ export default async function LandingPage() {
           <div className="absolute -right-4 top-1/2 hidden w-56 -translate-y-1/2 translate-x-full rounded-2xl bg-zinc-900 p-4 text-xs text-white shadow-xl lg:block">
             <div className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 bg-zinc-900" />
             See exactly why a booking might already be off the table — before you ever send a message.
+          </div>
+        </div>
+      </section>
+
+      {/* Post-booking workflow — not live yet, labeled as such rather than presented as shipped */}
+      <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">
+              Coming soon
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-zinc-900 sm:text-3xl">Discovery is step one</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
+              We’re building the rest of the booking workflow next, so a shortlist turns into a signed lineup
+              without leaving PulseGrid.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {WORKFLOW_BLOCKS.map((block) => (
+              <div key={block.title} className={`rounded-2xl ${block.color} p-6`}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
+                  <block.icon className="h-5 w-5 text-zinc-800" />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
