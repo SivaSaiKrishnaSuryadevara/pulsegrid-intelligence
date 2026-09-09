@@ -293,10 +293,6 @@ export default async function LandingPage() {
           influencer directory&apos;s engagement chart. Tech rider notes, real media proof from their own posts, and
           dialect fluency, alongside reach and rate.
         </p>
-        <p className="mx-auto mt-2 max-w-xl text-center text-xs text-zinc-400">
-          Keyword-classified first, then Claude reviews the handful a keyword pass can&apos;t confidently place —
-          nothing gets in on a guess from either step.
-        </p>
 
         <div className="relative mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-xl">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Illustrative example</p>
