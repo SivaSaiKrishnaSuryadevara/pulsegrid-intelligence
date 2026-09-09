@@ -88,7 +88,7 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
   const today = new Date().toISOString().slice(0, 10);
 
   const [creatorsResult, blackoutsResult] = await Promise.all([
-    supabase.from('production_entities').select(DISCOVERY_COLUMNS).eq('is_verified', true),
+    supabase.from('production_entities').select(DISCOVERY_COLUMNS),
     supabase
       .from('creator_category_blackouts')
       .select('creator_id, brand_name, category_slug, blackout_end_date')

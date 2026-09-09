@@ -160,7 +160,6 @@ export async function getDirectoryPageData(config: DirectoryPageConfig): Promise
       .select('*')
       .eq('primary_metro', config.metro)
       .eq('primary_niche', config.niche)
-      .eq('is_verified', true)
       .order('engagement_rate', { ascending: false, nullsFirst: false })
       .limit(DIRECTORY_CREATOR_LIMIT);
     if (config.languageFilter) {
@@ -209,7 +208,6 @@ export async function getCreatorMediaKit(handle: string): Promise<CreatorMediaKi
       .from('production_entities')
       .select('*')
       .eq('handle', normalizedHandle)
-      .eq('is_verified', true)
       .maybeSingle();
 
     if (creatorError) {
@@ -259,7 +257,6 @@ export async function getVerifiedCreatorHandles(): Promise<VerifiedHandleRecord[
     const { data, error } = await supabase
       .from('production_entities')
       .select('handle, updated_at')
-      .eq('is_verified', true)
       .order('handle', { ascending: true });
 
     if (error) {

@@ -208,7 +208,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       'id, handle, display_name, avatar_url, entity_type, primary_metro, primary_niche, secondary_languages, follower_count, engagement_rate, avg_reel_views, est_minimum_rate_usd, est_maximum_rate_usd, booking_status, deliverability_score, is_verified, rep_type, direct_booking_email, direct_booking_phone',
       { count: 'exact' }
     )
-    .eq('is_verified', true)
     .order('handle', { ascending: true })
     .range(offset, offset + limit - 1);
 
