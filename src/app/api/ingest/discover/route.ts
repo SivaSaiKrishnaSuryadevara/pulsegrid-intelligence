@@ -175,11 +175,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // it was first seen under if it appears under more than one.
   const handlesByHashtag = new Map<string, string[]>();
   const seenHandles = new Set<string>();
-  let discoveredCount = 0;
   for (const item of rawPosts as HashtagPostItem[]) {
     const username = item?.ownerUsername?.trim().toLowerCase();
     if (!username) continue;
-    discoveredCount += 1;
     if (seenHandles.has(username)) continue;
     seenHandles.add(username);
     const tag = extractHashtagLabel(item.inputUrl);
