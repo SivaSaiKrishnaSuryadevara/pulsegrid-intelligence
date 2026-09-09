@@ -26,9 +26,22 @@ const TRIGGER_HEADLINES: Record<AgencyPassModalProps['trigger'], string> = {
 
 type LeadState = 'idle' | 'submitting' | 'submitted' | 'error';
 
+type ProductionNeeds = 'stage_talent' | 'creator_media_flight' | 'full_bundle';
+
+const PRODUCTION_NEEDS_OPTIONS: { value: ProductionNeeds; label: string; helper: string }[] = [
+  { value: 'stage_talent', label: 'Stage Talent Only', helper: 'DJs, Emcees, Troupes, Planners' },
+  {
+    value: 'creator_media_flight',
+    label: 'Creator Media Flight / Local Ads',
+    helper: 'Promotions, ticket sales, sponsorships — not yet available, demand signal only',
+  },
+  { value: 'full_bundle', label: 'Full Production + Campaign Bundle', helper: 'Both of the above' },
+];
+
 export function AgencyPassModal({ open, onOpenChange, trigger }: AgencyPassModalProps) {
   const [workEmail, setWorkEmail] = useState('');
   const [tierInterest, setTierInterest] = useState<'campaign_pass' | 'agency_pro'>('agency_pro');
+  const [productionNeeds, setProductionNeeds] = useState<ProductionNeeds | null>(null);
   const [leadState, setLeadState] = useState<LeadState>('idle');
 
   async function handleSubmitLead(event: React.FormEvent): Promise<void> {
@@ -39,7 +52,7 @@ export function AgencyPassModal({ open, onOpenChange, trigger }: AgencyPassModal
       const response = await fetch('/api/growth/lead-capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workEmail: workEmail.trim(), tierInterest }),
+        body: JSON.stringify({ workEmail: workEmail.trim(), tierInterest, productionNeeds }),
       });
       if (!response.ok) throw new Error('Request failed');
       setLeadState('submitted');
@@ -99,7 +112,35 @@ export function AgencyPassModal({ open, onOpenChange, trigger }: AgencyPassModal
             />
           </div>
 
-          <div className="mt-6 space-y-3 border-t border-zinc-200 pt-5">
+          <div className="mt-6 border-t border-zinc-200 pt-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Production Needs</p>
+            <div className="mt-2.5 space-y-2">
+              {PRODUCTION_NEEDS_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition-all ${
+                    productionNeeds === option.value
+                      ? 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-200'
+                      : 'border-zinc-200 bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="productionNeeds"
+                    className="mt-0.5 h-3.5 w-3.5 accent-emerald-600"
+                    checked={productionNeeds === option.value}
+                    onChange={() => setProductionNeeds(option.value)}
+                  />
+                  <span>
+                    <span className="block text-xs font-semibold text-zinc-900">{option.label}</span>
+                    <span className="block text-[11px] text-zinc-500">{option.helper}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3 border-t border-zinc-200 pt-5">
             <a
               href="mailto:sales@pulsegrid.io?subject=10-Minute%20Concierge%20Lineup%20Call"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800"

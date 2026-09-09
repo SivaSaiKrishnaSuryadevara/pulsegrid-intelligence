@@ -3,8 +3,11 @@ import {
   Banknote,
   CalendarClock,
   Check,
+  Clapperboard,
+  FileStack,
   Handshake,
   ListChecks,
+  MapPin,
   Mic2,
   Music2,
   PartyPopper,
@@ -107,6 +110,30 @@ const JOURNEY_STEPS = [
     icon: Banknote,
     title: 'Deposit',
     body: 'Handle the deposit without a separate invoicing tool or a trail of Venmo screenshots.',
+  },
+] as const;
+
+// Proposed second product line — regional promotional campaigns using the
+// same discovered solo_creator pool, sold to a different buyer (local
+// businesses/promoters, not wedding-booking agencies). Not built: no
+// campaign, delivery-tracking, or billing tables exist yet. Landing-page +
+// lead-capture only, to gauge demand before committing engineering time —
+// see the "Production Needs" selector in AgencyPassModal.
+const CAMPAIGN_BLOCKS = [
+  {
+    icon: Clapperboard,
+    title: 'Event Hype Flights',
+    body: 'Multi-creator Reel pushes leading up to a festival or concert date.',
+  },
+  {
+    icon: MapPin,
+    title: 'Local Business Activations',
+    body: 'In-person visits and geo-tagged reviews for restaurants, boutiques, and regional sponsors.',
+  },
+  {
+    icon: FileStack,
+    title: 'Zero Agency Overhead',
+    body: 'Standardized briefs, tracked delivery proof, and consolidated billing.',
   },
 ] as const;
 
@@ -310,6 +337,40 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Regional Media & Creator Ad Desks — proposed second product line, not built. See CAMPAIGN_BLOCKS above for why. */}
+      <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">
+              Coming soon
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-zinc-900 sm:text-3xl">
+              Turn Local Reach into Sold-Out Venues &amp; Foot Traffic
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
+              Deploy curated rosters of trusted regional creators for pre-event hype, venue walkthroughs, and
+              targeted localized sponsor campaigns — Regional Media &amp; Creator Ad Desks, built on the same
+              verified DFW directory.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {CAMPAIGN_BLOCKS.map((block) => (
+              <div key={block.title} className="rounded-2xl border border-zinc-200 p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
+                  <block.icon className="h-5 w-5 text-zinc-700" />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mx-auto mt-6 max-w-xl text-center text-xs text-zinc-400">
+            Tell us if this is what you need — select it under &ldquo;Production Needs&rdquo; when you request an
+            Agency Pass, and we’ll prioritize building it based on real demand.
+          </p>
         </div>
       </section>
 
