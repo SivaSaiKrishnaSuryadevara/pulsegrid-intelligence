@@ -110,6 +110,19 @@ const JOURNEY_STEPS = [
   },
 ] as const;
 
+const FIT_SIGNALS = [
+  {
+    number: '01',
+    label: 'Volume',
+    chips: ['Booking 3+ vendors per wedding season', 'Working across multiple DFW venues', 'Expanding beyond one event type'],
+  },
+  {
+    number: '02',
+    label: 'The actual pain',
+    chips: ['Tired of double-booked vendors', 'Want real rates, not Instagram guesswork', 'Juggling separate lists per vendor type'],
+  },
+] as const;
+
 const FAQ_ITEMS = [
   {
     q: 'Why only South Asian / Desi event vendors, not creators in general?',
@@ -324,6 +337,37 @@ export default async function LandingPage() {
                 </summary>
                 <p className="mt-2 text-sm text-zinc-600">{item.a}</p>
               </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Fit qualifier — helps a PR/event agency self-identify rather than a generic "sign up" pitch */}
+      <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_1.4fr] sm:items-start">
+            <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">Is PulseGrid right for you?</h2>
+            <p className="text-sm text-zinc-600">
+              A strong fit if you’re booking talent for South Asian weddings and events and need a faster way to
+              find, vet, and confirm vendors — without juggling five separate Instagram searches per event.
+            </p>
+          </div>
+          <div className="mt-8 divide-y divide-zinc-200 border-t border-zinc-200">
+            {FIT_SIGNALS.map((group) => (
+              <div key={group.number} className="grid grid-cols-1 gap-3 py-6 sm:grid-cols-[1fr_3fr] sm:items-center">
+                <span className="text-2xl font-bold text-zinc-300">{group.number}</span>
+                <div className="flex flex-wrap gap-2">
+                  {group.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700"
+                    >
+                      <Check className="h-3 w-3 text-emerald-600" />
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
