@@ -98,7 +98,14 @@ export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
   selectedNiches: [],
   selectedRepTypes: [],
   secondaryLanguages: [],
-  minER: ENGAGEMENT_RATE_BOUNDS.min,
+  // null, not ENGAGEMENT_RATE_BOUNDS.min — a non-null default silently
+  // hid every real small-vendor account under 1% engagement (confirmed:
+  // 3 of 16 legitimate discovered entities) with no visible "active
+  // filter" indicator, since the count check only fires when min exceeds
+  // the bound. The slider still visually rests at the bound (see
+  // `value.minER ?? ENGAGEMENT_RATE_BOUNDS.min` in filter-strip.tsx) —
+  // this only changes what's true before a user touches it.
+  minER: null,
   maxER: ENGAGEMENT_RATE_BOUNDS.max,
   hideConflicts: false,
   availabilityFilter: 'all',
