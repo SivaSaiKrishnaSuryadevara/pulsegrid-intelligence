@@ -16,7 +16,7 @@ export const SITE_NAME = 'PulseGrid Intelligence';
 // (sitemap, canonical URLs) never breaks on a missing env var; set
 // NEXT_PUBLIC_SITE_URL per-environment so staging/preview deploys don't
 // advertise pulsegrid.io URLs for content they didn't actually serve.
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pulsegrid.io';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.pulsegridos.com';
 
 // =====================================================================================
 // Full label dictionaries (cover every enum value, used generically across the app —

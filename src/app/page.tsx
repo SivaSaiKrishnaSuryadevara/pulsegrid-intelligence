@@ -202,7 +202,9 @@ export default async function LandingPage() {
           </div>
           <span className="text-sm font-bold tracking-tight text-zinc-900">
             PULSEGRID<sup className="text-[9px]">™</sup>{' '}
-            <span className="hidden font-normal text-zinc-500 sm:inline">| Event Talent &amp; Media Intelligence</span>
+            <span className="hidden font-normal text-zinc-500 sm:inline">
+              | Event Production &amp; Cultural Media Intelligence OS
+            </span>
           </span>
         </div>
         <LandingCtas size="sm" />
@@ -211,7 +213,7 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:px-6">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-          <Sparkles className="h-3 w-3" /> The vendor desk for South Asian weddings &amp; events
+          <Sparkles className="h-3 w-3" /> The Event Production &amp; Cultural Media Intelligence OS at pulsegridos.com
         </span>
         <h1 className="mt-5 text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
           Book the Right DJ, Dance Troupe,
@@ -221,7 +223,8 @@ export default async function LandingPage() {
         <p className="mx-auto mt-5 max-w-2xl text-base text-zinc-600 sm:text-lg">
           Every Desi wedding season, the same vendors get double-booked and the same Instagram DMs go unanswered.
           PulseGrid is a verified directory built specifically for South Asian event vendors — genre-matched,
-          conflict-checked, and ready to book.
+          conflict-checked, and ready to book. Beyond stage talent, PulseGrid also connects regional businesses
+          and promoters with verified local creators for event hype and foot-traffic campaigns.
         </p>
         <div className="mt-8 flex justify-center">
           <LandingCtas size="lg" />
@@ -273,7 +276,9 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
         <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">The Full Dossier</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600">
-          Every result opens into this — not just a profile picture and a follower count.
+          Every result opens into this — not just a profile picture and a follower count, and not a generic
+          influencer directory&apos;s engagement chart. Tech rider notes, real media proof from their own posts, and
+          dialect fluency, alongside reach and rate.
         </p>
 
         <div className="relative mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -304,6 +309,11 @@ export default async function LandingPage() {
           <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
             <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
             Self-Represented Desk · Deliverability Pending
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+            <span>Tech Rider: Console + 2 wireless mics</span>
+            <span>Dialect: Hindi, Telugu</span>
           </div>
 
           <div className="absolute -right-4 top-1/2 hidden w-56 -translate-y-1/2 translate-x-full rounded-2xl bg-zinc-900 p-4 text-xs text-white shadow-xl lg:block">

@@ -17,8 +17,8 @@ function resolveMetadataBase(url: string): URL {
   try {
     return new URL(url);
   } catch {
-    console.error(`[layout] NEXT_PUBLIC_SITE_URL="${url}" is not a valid URL — falling back to https://pulsegrid.io`);
-    return new URL('https://pulsegrid.io');
+    console.error(`[layout] NEXT_PUBLIC_SITE_URL="${url}" is not a valid URL — falling back to https://www.pulsegridos.com`);
+    return new URL('https://www.pulsegridos.com');
   }
 }
 
@@ -28,7 +28,8 @@ export const metadata: Metadata = {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
-  description: 'Verified creator intelligence, event-organizer directory, and automated client-pitching platform.',
+  description:
+    'The Event Production & Cultural Media Intelligence OS — verified South Asian event-vendor directory and regional creator campaign platform.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

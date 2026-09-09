@@ -29,13 +29,13 @@ type LeadState = 'idle' | 'submitting' | 'submitted' | 'error';
 type ProductionNeeds = 'stage_talent' | 'creator_media_flight' | 'full_bundle';
 
 const PRODUCTION_NEEDS_OPTIONS: { value: ProductionNeeds; label: string; helper: string }[] = [
-  { value: 'stage_talent', label: 'Stage Talent Only', helper: 'DJs, Emcees, Troupes, Planners' },
+  { value: 'stage_talent', label: 'Stage Talent', helper: 'DJs, Emcees, Troupes, Planners' },
   {
     value: 'creator_media_flight',
-    label: 'Creator Media Flight / Local Ads',
-    helper: 'Promotions, ticket sales, sponsorships — not yet available, demand signal only',
+    label: 'Regional Creator Campaign Flights',
+    helper: 'Event hype, foot-traffic activations — not yet available, demand signal only',
   },
-  { value: 'full_bundle', label: 'Full Production + Campaign Bundle', helper: 'Both of the above' },
+  { value: 'full_bundle', label: 'Combined Production Bundle', helper: 'Both of the above' },
 ];
 
 export function AgencyPassModal({ open, onOpenChange, trigger }: AgencyPassModalProps) {
