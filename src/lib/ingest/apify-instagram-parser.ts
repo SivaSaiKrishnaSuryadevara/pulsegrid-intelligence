@@ -152,14 +152,31 @@ const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[
  * related at all (e.g. "Founder @shespinsglobal. Available worldwide.").
  * Returns null when neither carries any event-industry signal — callers
  * decide what "no signal" means (see requireBioSignal below).
+ *
+ * When multiple categories match (common — "DJ & Emcee" and "DJ/MC" are
+ * standard bundled wedding-vendor packages), the earliest match in the
+ * text wins rather than whichever rule happens to sit first in
+ * ENTITY_TYPE_KEYWORD_RULES. Confirmed necessary: "NINA THE EMCEE /
+ * Professional Event Emcee / ... / DJ / Radio Personality" and "Emcee
+ * Pooja"'s "Experienced EMCEE / Event Planning / ... / Basic DJ" both
+ * matched local_dj under array-order priority (local_dj was checked
+ * first) despite "emcee" being both accounts' own primary self-
+ * description, appearing well before the passing "DJ" mention — bios
+ * conventionally lead with the role the person considers primary.
  */
 export function inferEntityType(signalText: string): EntityType | null {
+  let bestType: EntityType | null = null;
+  let bestIndex = Infinity;
   for (const rule of ENTITY_TYPE_KEYWORD_RULES) {
-    if (rule.patterns.some((pattern) => pattern.test(signalText))) {
-      return rule.entityType;
+    for (const pattern of rule.patterns) {
+      const match = signalText.match(pattern);
+      if (match?.index !== undefined && match.index < bestIndex) {
+        bestIndex = match.index;
+        bestType = rule.entityType;
+      }
     }
   }
-  return null;
+  return bestType;
 }
 
 /** No separate niche heuristic — derived from the entity type already inferred from the same bio. */
