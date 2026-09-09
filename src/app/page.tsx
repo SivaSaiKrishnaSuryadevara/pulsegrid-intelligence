@@ -18,6 +18,7 @@ import {
 
 import { GovernanceFooter } from '@/components/discover/governance-footer';
 import { LandingCtas } from '@/components/marketing/landing-ctas';
+import { RevealOnScroll } from '@/components/marketing/reveal-on-scroll';
 import { getServiceRoleClient } from '@/lib/supabase/service';
 import type { EntityType } from '@/types/creator';
 
@@ -91,21 +92,29 @@ const CATEGORY_BLOCKS = [
 // SaaS pattern that doesn't match how a wedding vendor actually gets hired).
 const JOURNEY_STEPS = [
   {
+    color: 'bg-sky-100',
+    accent: 'text-sky-800',
     icon: ListChecks,
     title: 'Shortlist',
     body: 'Compare vendors across every category side by side — reach, rates, and rider specs in one view.',
   },
   {
+    color: 'bg-violet-100',
+    accent: 'text-violet-800',
     icon: Handshake,
     title: 'Request',
     body: 'Send a deterministic Outreach Brief built from your event date and details — no blank-page cold DM.',
   },
   {
+    color: 'bg-amber-100',
+    accent: 'text-amber-800',
     icon: CalendarClock,
     title: 'Confirm',
     body: 'Track the reply and hold the date, with the same Exclusivity Radar checking for new conflicts.',
   },
   {
+    color: 'bg-emerald-100',
+    accent: 'text-emerald-800',
     icon: Banknote,
     title: 'Deposit',
     body: 'Handle the deposit without a separate invoicing tool or a trail of Venmo screenshots.',
@@ -120,16 +129,22 @@ const JOURNEY_STEPS = [
 // see the "Production Needs" selector in AgencyPassModal.
 const CAMPAIGN_BLOCKS = [
   {
+    color: 'bg-rose-100',
+    accent: 'text-rose-800',
     icon: Clapperboard,
     title: 'Event Hype Flights',
     body: 'Multi-creator Reel pushes leading up to a festival or concert date.',
   },
   {
+    color: 'bg-cyan-100',
+    accent: 'text-cyan-800',
     icon: MapPin,
     title: 'Local Business Activations',
     body: 'In-person visits and geo-tagged reviews for restaurants, boutiques, and regional sponsors.',
   },
   {
+    color: 'bg-lime-100',
+    accent: 'text-lime-800',
     icon: FileStack,
     title: 'Zero Agency Overhead',
     body: 'Standardized briefs, tracked delivery proof, and consolidated billing.',
@@ -154,8 +169,8 @@ const FAQ_ITEMS = [
     a: 'Dallas-Fort Worth (DFW) is the active market today, discovered weekly via an automated pipeline. Coverage expands as new regional hashtag sets are added.',
   },
   {
-    q: 'How is a profile verified?',
-    a: 'Every entity is discovered from real, public Instagram activity, then classified by what they actually say about themselves — bio and display-name phrasing like "DJ," "Event Planning," or "Content Creator" — not guessed. Profiles with no real signal of being an event professional are never added, even if a tracked hashtag surfaced them.',
+    q: 'How is a profile verified — is it AI?',
+    a: 'Both, in that order. A deterministic keyword pass handles every discovered account first — free, instant, and tuned against real data. Only the handful it can’t confidently place get a second look from Claude, which either confirms a real category or agrees it’s not an event professional. Nothing gets in on a guess from either step, and the AI never overrides a rejection the keyword pass got right.',
   },
   {
     q: 'How is engagement rate calculated?',
@@ -233,14 +248,17 @@ export default async function LandingPage() {
 
       {/* Category grid — the structural difference: entity-type-aware vendor categories, not a generic creator list */}
       <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        <RevealOnScroll className="mx-auto max-w-6xl">
           <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">Five vendor categories, one directory</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600">
             Every category tracks what actually matters for booking it — not a one-size-fits-all creator profile.
           </p>
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORY_BLOCKS.map((block) => (
-              <div key={block.title} className={`rounded-2xl ${block.color} p-6`}>
+              <div
+                key={block.title}
+                className={`rounded-2xl ${block.color} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
                   <block.icon className={`h-5 w-5 ${block.accent}`} />
                 </div>
@@ -249,12 +267,12 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* Wedding-season pain point — specific to the actual booking problem, not a generic SaaS "old way" trope */}
       <section className="px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
+        <RevealOnScroll className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
             Peak season, the good ones are already booked
           </h2>
@@ -263,19 +281,24 @@ export default async function LandingPage() {
             dance troupe already has a wedding the same weekend, or whether that Instagram bio is a real rate or
             a guess. PulseGrid checks all three before you ever send a message.
           </p>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* See it in action — an annotated mockup of the real dossier UI, using real field labels rather than a fabricated screenshot */}
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <RevealOnScroll>
         <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">The Full Dossier</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600">
           Every result opens into this — not just a profile picture and a follower count, and not a generic
           influencer directory&apos;s engagement chart. Tech rider notes, real media proof from their own posts, and
           dialect fluency, alongside reach and rate.
         </p>
+        <p className="mx-auto mt-2 max-w-xl text-center text-xs text-zinc-400">
+          Keyword-classified first, then Claude reviews the handful a keyword pass can&apos;t confidently place —
+          nothing gets in on a guess from either step.
+        </p>
 
-        <div className="relative mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="relative mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-xl">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Illustrative example</p>
           <div className="mt-2 flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-zinc-200" />
@@ -315,11 +338,12 @@ export default async function LandingPage() {
             See exactly why a booking might already be off the table — before you ever send a message.
           </div>
         </div>
+        </RevealOnScroll>
       </section>
 
       {/* Booking journey — not live yet, framed as an actual vendor-booking flow, not a brand-campaign workflow */}
       <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        <RevealOnScroll className="mx-auto max-w-6xl">
           <div className="text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">
               Coming soon
@@ -331,22 +355,25 @@ export default async function LandingPage() {
           </div>
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {JOURNEY_STEPS.map((step, i) => (
-              <div key={step.title} className="rounded-2xl border border-zinc-200 p-6">
-                <span className="text-xs font-bold text-zinc-400">0{i + 1}</span>
-                <div className="mt-2 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
-                  <step.icon className="h-5 w-5 text-zinc-700" />
+              <div
+                key={step.title}
+                className={`rounded-2xl ${step.color} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+              >
+                <span className="text-xs font-bold text-zinc-500">0{i + 1}</span>
+                <div className="mt-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
+                  <step.icon className={`h-5 w-5 ${step.accent}`} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-zinc-900">{step.title}</h3>
                 <p className="mt-2 text-sm text-zinc-700">{step.body}</p>
               </div>
             ))}
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* Regional Media & Creator Ad Desks — proposed second product line, not built. See CAMPAIGN_BLOCKS above for why. */}
       <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        <RevealOnScroll className="mx-auto max-w-6xl">
           <div className="text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">
               Coming soon
@@ -362,9 +389,12 @@ export default async function LandingPage() {
           </div>
           <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
             {CAMPAIGN_BLOCKS.map((block) => (
-              <div key={block.title} className="rounded-2xl border border-zinc-200 p-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
-                  <block.icon className="h-5 w-5 text-zinc-700" />
+              <div
+                key={block.title}
+                className={`rounded-2xl ${block.color} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
+                  <block.icon className={`h-5 w-5 ${block.accent}`} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
                 <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
@@ -375,41 +405,43 @@ export default async function LandingPage() {
             Tell us if this is what you need — select it under &ldquo;Production Needs&rdquo; when you request an
             Agency Pass, and we’ll prioritize building it based on real demand.
           </p>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* Honest current-state stats, in place of fabricated testimonials */}
       <section className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-        <Sprout className="mx-auto h-6 w-6 text-zinc-400" />
-        <h2 className="mt-4 text-xl font-bold text-zinc-900">Early, and growing every week</h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
-          PulseGrid is early-stage — {stats.total > 0 ? `${stats.total} verified DFW vendors` : 'a growing DFW directory'}{' '}
-          today, added to automatically every week. We’d rather tell you that honestly than show you logos we
-          don’t have yet.
-        </p>
+        <RevealOnScroll>
+          <Sprout className="mx-auto h-6 w-6 text-zinc-400" />
+          <h2 className="mt-4 text-xl font-bold text-zinc-900">Early, and growing every week</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
+            PulseGrid is early-stage — {stats.total > 0 ? `${stats.total} verified DFW vendors` : 'a growing DFW directory'}{' '}
+            today, added to automatically every week. We’d rather tell you that honestly than show you logos we
+            don’t have yet.
+          </p>
+        </RevealOnScroll>
       </section>
 
       {/* FAQ */}
       <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-2xl">
+        <RevealOnScroll className="mx-auto max-w-2xl">
           <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">Frequently asked questions</h2>
           <div className="mt-8 divide-y divide-zinc-200">
             {FAQ_ITEMS.map((item) => (
               <details key={item.q} className="group py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900 transition-colors hover:text-emerald-700">
                   {item.q}
-                  <span className="ml-4 text-zinc-400 transition-transform group-open:rotate-45">+</span>
+                  <span className="ml-4 text-zinc-400 transition-transform duration-200 group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-2 text-sm text-zinc-600">{item.a}</p>
               </details>
             ))}
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* Fit qualifier — helps a PR/event agency self-identify rather than a generic "sign up" pitch */}
       <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-4xl">
+        <RevealOnScroll className="mx-auto max-w-4xl">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_1.4fr] sm:items-start">
             <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">Is PulseGrid right for you?</h2>
             <p className="text-sm text-zinc-600">
@@ -419,7 +451,10 @@ export default async function LandingPage() {
           </div>
           <div className="mt-8 divide-y divide-zinc-100 border-t border-zinc-200">
             {FIT_SIGNALS.map((signal) => (
-              <div key={signal.text} className="flex items-center gap-4 py-4">
+              <div
+                key={signal.text}
+                className="-mx-2 flex items-center gap-4 rounded-lg px-2 py-4 transition-colors hover:bg-amber-50/60"
+              >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
                   <signal.icon className="h-4 w-4 text-amber-700" />
                 </div>
@@ -427,23 +462,25 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* Closing CTA */}
       <section className="bg-zinc-900 px-4 py-20 text-center sm:px-6">
-        <h2 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-6xl">
-          Book With Confidence,
-          <br />
-          Not a Guess
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-sm text-zinc-400">
-          No trial gimmicks, no credit card — browse the DFW directory free, request an Agency Pass when you need
-          direct desks.
-        </p>
-        <div className="mt-8 flex justify-center">
-          <LandingCtas size="lg" />
-        </div>
+        <RevealOnScroll>
+          <h2 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-6xl">
+            Book With Confidence,
+            <br />
+            Not a Guess
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-sm text-zinc-400">
+            No trial gimmicks, no credit card — browse the DFW directory free, request an Agency Pass when you need
+            direct desks.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <LandingCtas size="lg" />
+          </div>
+        </RevealOnScroll>
       </section>
 
       <GovernanceFooter />

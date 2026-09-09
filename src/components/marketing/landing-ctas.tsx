@@ -19,14 +19,14 @@ export function LandingCtas({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
       <div className="flex flex-wrap items-center gap-3">
         <a
           href="/login"
-          className={`rounded-xl bg-zinc-900 font-semibold text-white shadow-sm transition-all hover:bg-zinc-800 ${sizeClasses}`}
+          className={`rounded-xl bg-zinc-900 font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-md active:translate-y-0 ${sizeClasses}`}
         >
           Sign In
         </a>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className={`rounded-xl border border-zinc-300 bg-white font-semibold text-zinc-900 transition-all hover:border-zinc-400 ${sizeClasses}`}
+          className={`rounded-xl border border-zinc-300 bg-white font-semibold text-zinc-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-md active:translate-y-0 ${sizeClasses}`}
         >
           Request Agency Pass
         </button>
