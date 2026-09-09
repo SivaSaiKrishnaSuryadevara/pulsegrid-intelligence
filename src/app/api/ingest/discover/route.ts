@@ -55,6 +55,44 @@ interface ApifyRunFinishedPayload {
 
 interface HashtagPostItem {
   ownerUsername?: string | null;
+  /** e.g. "https://www.instagram.com/explore/tags/dfwdesievents/" — the only field in the scraper's output that says which tracked hashtag surfaced this post (`hashtags` is the post's OWN caption tags, unrelated). Used to keep MAX_DISCOVERED_HANDLES from being dominated by whichever hashtag the actor happens to write to the dataset first. */
+  inputUrl?: string | null;
+}
+
+/** Last non-empty path segment of the tag-explore URL, lowercased; "unknown" if unparseable rather than silently merging into another bucket. */
+function extractHashtagLabel(inputUrl: string | null | undefined): string {
+  const segments = (inputUrl ?? '').split('/').filter(Boolean);
+  const last = segments.at(-1);
+  return last ? last.toLowerCase() : 'unknown';
+}
+
+/**
+ * Round-robins across hashtag groups (each already in dataset-encounter
+ * order) instead of taking a flat prefix slice. A flat slice over an
+ * arbitrarily-ordered global list let whichever hashtag the actor happens
+ * to write last get silently zeroed out once earlier hashtags filled the
+ * cap — confirmed in production: #dfwdesievents (13 authors) was written
+ * last across a 5-hashtag run and every one of its authors fell past
+ * MAX_DISCOVERED_HANDLES=50, so zero of them ever reached profile
+ * enrichment. Round-robin guarantees every tracked hashtag gets a fair
+ * share before any one hashtag gets a second pick.
+ */
+function selectFairlyAcrossHashtags(groupedHandles: Map<string, string[]>, max: number): string[] {
+  const queues = Array.from(groupedHandles.values()).map((handles) => [...handles]);
+  const selected: string[] = [];
+  let tookAny = true;
+  while (selected.length < max && tookAny) {
+    tookAny = false;
+    for (const queue of queues) {
+      if (selected.length >= max) break;
+      const next = queue.shift();
+      if (next !== undefined) {
+        selected.push(next);
+        tookAny = true;
+      }
+    }
+  }
+  return selected;
 }
 
 function errorResponse(status: number, error: string, message: string): NextResponse {
@@ -131,15 +169,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponse(502, 'DATASET_FETCH_FAILED', errorMessage(err));
   }
 
-  const discoveredHandles = new Set<string>();
+  // Grouped by tracked hashtag (dataset-encounter order preserved within
+  // each group) so the cap below can be applied fairly — see
+  // selectFairlyAcrossHashtags. A handle stays in whichever hashtag group
+  // it was first seen under if it appears under more than one.
+  const handlesByHashtag = new Map<string, string[]>();
+  const seenHandles = new Set<string>();
+  let discoveredCount = 0;
   for (const item of rawPosts as HashtagPostItem[]) {
     const username = item?.ownerUsername?.trim().toLowerCase();
-    if (username) discoveredHandles.add(username);
+    if (!username) continue;
+    discoveredCount += 1;
+    if (seenHandles.has(username)) continue;
+    seenHandles.add(username);
+    const tag = extractHashtagLabel(item.inputUrl);
+    const group = handlesByHashtag.get(tag) ?? [];
+    group.push(username);
+    handlesByHashtag.set(tag, group);
   }
+  const discoveredHandles = seenHandles;
 
   // ---------------------------------------------------------------------
   // Drop handles already on file (discovery, not a refresh job — see
-  // header note), then cap the batch.
+  // header note), then cap the batch — fairly across hashtags, not by a
+  // flat prefix slice (see selectFairlyAcrossHashtags).
   // ---------------------------------------------------------------------
   const serviceClient = getServiceRoleClient();
   const { data: existingRows, error: existingError } = await serviceClient
@@ -152,9 +205,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const existingHandles = new Set((existingRows ?? []).map((r) => (r as { handle: string }).handle));
-  const newHandles = Array.from(discoveredHandles)
-    .filter((handle) => !existingHandles.has(handle))
-    .slice(0, MAX_DISCOVERED_HANDLES);
+  const newHandlesByHashtag = new Map(
+    Array.from(handlesByHashtag.entries()).map(([tag, handles]) => [
+      tag,
+      handles.filter((handle) => !existingHandles.has(handle)),
+    ])
+  );
+  const newHandles = selectFairlyAcrossHashtags(newHandlesByHashtag, MAX_DISCOVERED_HANDLES);
 
   if (newHandles.length === 0) {
     return NextResponse.json({
