@@ -1,19 +1,18 @@
 import {
   AlertTriangle,
   Banknote,
+  CalendarClock,
   Check,
-  ClipboardList,
-  Mail,
-  Music2,
+  Handshake,
+  ListChecks,
   Mic2,
+  Music2,
   PartyPopper,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
+  Sprout,
   Users,
-  X,
 } from 'lucide-react';
-import { Fragment } from 'react';
 
 import { GovernanceFooter } from '@/components/discover/governance-footer';
 import { LandingCtas } from '@/components/marketing/landing-ctas';
@@ -42,70 +41,79 @@ async function getLandingStats(): Promise<LandingStats> {
   }
 }
 
-const FEATURE_BLOCKS = [
+// The five vendor categories PulseGrid actually models — each field listed
+// here is a real column/entityDetails field, not aspirational copy. This
+// category grid is the thing a general creator-discovery tool structurally
+// can't have, since it has no concept of "entity type" at all.
+const CATEGORY_BLOCKS = [
   {
-    color: 'bg-violet-100',
+    color: 'bg-amber-100',
+    accent: 'text-amber-800',
     icon: Music2,
-    title: 'Match with the right talent, instantly',
-    body: 'Filter by entity type — DJ & Sound, Dance Troupe, Stage Emcee, Event Planner, Solo Creator — plus dialect, genre, engagement rate, and metro. No more scrolling five hashtags by hand.',
+    title: 'DJ & Sound',
+    body: 'Genre-matched to Bollywood, Bhangra, Garba, Tollywood, and more — plus set length, guest capacity, and sound-rig specs.',
   },
   {
-    color: 'bg-pink-100',
+    color: 'bg-fuchsia-100',
+    accent: 'text-fuchsia-800',
+    icon: Sparkles,
+    title: 'Dance Troupe',
+    body: 'Troupe size and style — Bollywood Fusion, Bharatanatyam, Garba/Raas — so you know who can actually fill your stage.',
+  },
+  {
+    color: 'bg-indigo-100',
+    accent: 'text-indigo-800',
     icon: Mic2,
-    title: 'Vet before you ever reach out',
-    body: 'Every profile carries a Full Dossier: real reach and engagement, estimated rate range, media proof from their own recent posts, and an Exclusivity Radar flag if they’re already booked in your category.',
-  },
-  {
-    color: 'bg-orange-100',
-    icon: PartyPopper,
-    title: 'Turn one booking into a full roster',
-    body: 'Shortlist across every entity type at once, see the blended budget and combined reach for the whole lineup, and export a white-label PDF roster to send straight to your client.',
-  },
-] as const;
-
-const COMPARISON_ROWS = [
-  { old: 'Manually searching Instagram hashtags for hours', pulsegrid: 'One search across a verified, classified directory' },
-  { old: 'Guessing whether engagement numbers are real', pulsegrid: 'Computed engagement rate from their own recent posts' },
-  { old: 'No way to tell if they’re already booked for a rival event', pulsegrid: 'Exclusivity Radar flags active category conflicts' },
-  { old: 'Cold DMs with no context', pulsegrid: 'Deterministic Outreach Brief generated from your event details' },
-  { old: 'A different vendor list for every entity type', pulsegrid: 'DJs, dance troupes, emcees, planners, and creators — one roster' },
-] as const;
-
-// Not live yet — deliberately marked "Coming soon" below rather than
-// presented as shipped functionality (see the section eyebrow). Real
-// today: search/filter, the Full Dossier, Exclusivity Radar, and roster
-// export, all covered elsewhere on this page.
-const WORKFLOW_BLOCKS = [
-  {
-    color: 'bg-violet-100',
-    icon: ClipboardList,
-    title: 'Manage',
-    body: 'Every desk relationship in one place — notes, status, and history, out of your head and off a spreadsheet.',
-  },
-  {
-    color: 'bg-orange-100',
-    icon: Mail,
-    title: 'Outreach',
-    body: 'Deterministic Outreach Briefs today; full inbox-style bulk outreach and follow-up tracking next.',
-  },
-  {
-    color: 'bg-pink-100',
-    icon: TrendingUp,
-    title: 'Track',
-    body: 'Every booking from first contact to show night, tracked automatically instead of chased manually.',
+    title: 'Stage Emcee',
+    body: 'Bilingual hosts who can carry a full program — baraat to reception — without handing you a stranger mid-ceremony.',
   },
   {
     color: 'bg-rose-100',
+    accent: 'text-rose-800',
+    icon: PartyPopper,
+    title: 'Event Planner',
+    body: 'Venue scale from boutique to festival-sized, permit rating, and portfolio — not just a pretty Instagram grid.',
+  },
+  {
+    color: 'bg-teal-100',
+    accent: 'text-teal-800',
+    icon: Users,
+    title: 'Content Creator',
+    body: 'Real reach and engagement for wedding coverage and cultural content — computed from their own posts, not self-reported.',
+  },
+] as const;
+
+// Not live yet — see "Coming soon" eyebrow below. Framed as the actual
+// booking journey for an event vendor, not a generic brand-campaign
+// workflow (a rejected earlier draft mirrored a "Manage/Email/Track/Pay"
+// SaaS pattern that doesn't match how a wedding vendor actually gets hired).
+const JOURNEY_STEPS = [
+  {
+    icon: ListChecks,
+    title: 'Shortlist',
+    body: 'Compare vendors across every category side by side — reach, rates, and rider specs in one view.',
+  },
+  {
+    icon: Handshake,
+    title: 'Request',
+    body: 'Send a deterministic Outreach Brief built from your event date and details — no blank-page cold DM.',
+  },
+  {
+    icon: CalendarClock,
+    title: 'Confirm',
+    body: 'Track the reply and hold the date, with the same Exclusivity Radar checking for new conflicts.',
+  },
+  {
     icon: Banknote,
-    title: 'Pay',
-    body: 'Deposits and final payment without the invoice back-and-forth — no separate accounting tool needed.',
+    title: 'Deposit',
+    body: 'Handle the deposit without a separate invoicing tool or a trail of Venmo screenshots.',
   },
 ] as const;
 
 const FAQ_ITEMS = [
   {
-    q: 'Is PulseGrid only for South Asian / Desi talent right now?',
-    a: 'Yes — for this stage, PulseGrid is deliberately focused on Desi event talent and audiences (DJs, dance troupes, emcees, planners, and creators serving South Asian weddings and cultural events). Broader coverage may come later, but the discovery pipeline, classification, and dialect filters are all tuned for this community first.',
+    q: 'Why only South Asian / Desi event vendors, not creators in general?',
+    a: 'Because a generic creator database can’t tell a Bhangra DJ from a Bollywood DJ, or check whether a dance troupe is already booked for a wedding the same weekend. Those are the actual questions a Desi wedding needs answered, and they only work with a directory built around this community specifically — not a filter bolted onto a general-purpose tool.',
   },
   {
     q: 'Which cities do you cover?',
@@ -117,11 +125,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How is engagement rate calculated?',
-    a: 'From that creator’s own recent posts — total likes and comments divided by post count and follower count — not a self-reported number. Small local vendors naturally run lower engagement than mega-influencers; we don’t hide them for it.',
+    a: 'From that vendor’s own recent posts — total likes and comments divided by post count and follower count — not a self-reported number. Small local vendors naturally run lower engagement than mega-influencers; we don’t hide them for it.',
   },
   {
-    q: 'Can I tell if a creator already has a conflicting booking?',
-    a: 'Yes — the Exclusivity Radar flags active category-blackout windows, so you can see upfront if someone’s already committed to a rival brand or event in your category before you reach out.',
+    q: 'Can I tell if a vendor is already booked the same weekend?',
+    a: 'Yes — the Exclusivity Radar flags active category-blackout windows, so you can see upfront if someone’s already committed to another event in your category before you reach out. This matters most exactly when it matters most: peak wedding season.',
   },
   {
     q: 'What’s a "Desk Status"?',
@@ -129,14 +137,14 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What does a credit unlock?',
-    a: 'Browsing, filtering, and dossiers are free. A credit unlocks a specific creator’s direct booking desk (email/phone) so you can reach out without going through Instagram DMs.',
+    a: 'Browsing, filtering, and dossiers are free. A credit unlocks a specific vendor’s direct booking desk (email/phone) so you can reach out without going through Instagram DMs.',
   },
   {
     q: 'Can I export a roster to send to a client?',
     a: 'Yes — shortlist across DJs, dance troupes, emcees, planners, and creators in one roster, then export a white-label PDF with the full lineup, aggregate reach, and blended budget.',
   },
   {
-    q: 'Can a creator ask to be removed?',
+    q: 'Can a vendor ask to be removed?',
     a: 'Yes — every profile links to a Creator Opt-Out / Claim Profile flow in the footer, handled directly by our team.',
   },
 ] as const;
@@ -162,105 +170,70 @@ export default async function LandingPage() {
 
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:px-6">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-          <Sparkles className="h-3 w-3" /> Built for South Asian &amp; Desi events
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+          <Sparkles className="h-3 w-3" /> The vendor desk for South Asian weddings &amp; events
         </span>
         <h1 className="mt-5 text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-          Verified Desi Event Talent,
+          Book the Right DJ, Dance Troupe,
           <br />
-          Searchable In One Place
+          or Emcee — Not a Maybe
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-zinc-600 sm:text-lg">
-          Stop scrolling Instagram hashtags for wedding DJs, dance troupes, and emcees. PulseGrid discovers, verifies,
-          and classifies real South Asian event talent — with reach, rates, and booking desks in one dossier.
+          Every Desi wedding season, the same vendors get double-booked and the same Instagram DMs go unanswered.
+          PulseGrid is a verified directory built specifically for South Asian event vendors — genre-matched,
+          conflict-checked, and ready to book.
         </p>
         <div className="mt-8 flex justify-center">
           <LandingCtas size="lg" />
         </div>
 
         <div className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4 border-t border-zinc-200 pt-8">
-          <Stat value={stats.total > 0 ? `${stats.total}+` : 'Growing'} label="Verified DFW profiles" />
-          <Stat value="5" label="Talent categories" />
+          <Stat value={stats.total > 0 ? `${stats.total}+` : 'Growing'} label="Verified DFW vendors" />
+          <Stat value="5" label="Vendor categories" />
           <Stat value="Weekly" label="Automated discovery" />
         </div>
       </section>
 
-      {/* Problem */}
+      {/* Category grid — the structural difference: entity-type-aware vendor categories, not a generic creator list */}
       <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">Five vendor categories, one directory</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600">
+            Every category tracks what actually matters for booking it — not a one-size-fits-all creator profile.
+          </p>
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {CATEGORY_BLOCKS.map((block) => (
+              <div key={block.title} className={`rounded-2xl ${block.color} p-6`}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
+                  <block.icon className={`h-5 w-5 ${block.accent}`} />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Wedding-season pain point — specific to the actual booking problem, not a generic SaaS "old way" trope */}
+      <section className="px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
-            Scrolling Instagram for hours, found 3 maybes — and they still need vetting
+            Peak season, the good ones are already booked
           </h2>
           <p className="mt-4 text-zinc-600">
-            Hashtags surface anyone who posted once, not who’s actually a working DJ, dance troupe, or emcee.
-            Every lead still means checking real engagement, real rates, and whether they’re already booked
-            against you.
+            A hashtag search can’t tell you whether a DJ actually plays Bhangra as well as Bollywood, whether a
+            dance troupe already has a wedding the same weekend, or whether that Instagram bio is a real rate or
+            a guess. PulseGrid checks all three before you ever send a message.
           </p>
-        </div>
-      </section>
-
-      {/* Feature blocks */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">
-          Find talent worth your time, without the guesswork
-        </h2>
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {FEATURE_BLOCKS.map((block) => (
-            <div key={block.title} className={`rounded-2xl ${block.color} p-6`}>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
-                <block.icon className="h-5 w-5 text-zinc-800" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
-              <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Comparison */}
-      <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">Old way vs. PulseGrid way</h2>
-          <div className="mt-10 grid grid-cols-1 overflow-hidden rounded-3xl sm:grid-cols-2">
-            <div className="bg-zinc-100 p-6 sm:p-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-zinc-900">Old way</h3>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-300">
-                  <X className="h-4 w-4 text-zinc-700" />
-                </span>
-              </div>
-              <ul className="mt-6 space-y-4">
-                {COMPARISON_ROWS.map((row) => (
-                  <li key={row.old} className="border-b border-zinc-200 pb-4 text-sm text-zinc-600 last:border-0">
-                    {row.old}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-emerald-100 p-6 sm:p-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-emerald-900">PulseGrid way</h3>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500">
-                  <Check className="h-4 w-4 text-white" />
-                </span>
-              </div>
-              <ul className="mt-6 space-y-4">
-                {COMPARISON_ROWS.map((row) => (
-                  <li key={row.pulsegrid} className="border-b border-emerald-200/70 pb-4 text-sm font-medium text-emerald-950 last:border-0">
-                    {row.pulsegrid}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* See it in action — an annotated mockup of the real dossier UI, using real field labels rather than a fabricated screenshot */}
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-        <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">See it in action</h2>
+        <h2 className="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">The Full Dossier</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-600">
-          Every result opens into a Full Dossier — not just a profile picture and a follower count.
+          Every result opens into this — not just a profile picture and a follower count.
         </p>
 
         <div className="relative mx-auto mt-10 max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -285,7 +258,7 @@ export default async function LandingPage() {
 
           <div className="relative mt-5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-medium text-amber-800">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            Exclusivity Radar: booked for a competing brand through Oct 12
+            Exclusivity Radar: already booked for a wedding through Oct 12
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
@@ -293,7 +266,6 @@ export default async function LandingPage() {
             Self-Represented Desk · Deliverability Pending
           </div>
 
-          {/* Annotation callout, Modash-style */}
           <div className="absolute -right-4 top-1/2 hidden w-56 -translate-y-1/2 translate-x-full rounded-2xl bg-zinc-900 p-4 text-xs text-white shadow-xl lg:block">
             <div className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 bg-zinc-900" />
             See exactly why a booking might already be off the table — before you ever send a message.
@@ -301,27 +273,27 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Post-booking workflow — not live yet, labeled as such rather than presented as shipped */}
+      {/* Booking journey — not live yet, framed as an actual vendor-booking flow, not a brand-campaign workflow */}
       <section className="border-t border-zinc-200 bg-white px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">
               Coming soon
             </span>
-            <h2 className="mt-3 text-2xl font-bold text-zinc-900 sm:text-3xl">Discovery is step one</h2>
+            <h2 className="mt-3 text-2xl font-bold text-zinc-900 sm:text-3xl">From shortlist to signed lineup</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
-              We’re building the rest of the booking workflow next, so a shortlist turns into a signed lineup
-              without leaving PulseGrid.
+              Discovery and vetting are live today. We’re building the rest of the actual booking journey next.
             </p>
           </div>
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {WORKFLOW_BLOCKS.map((block) => (
-              <div key={block.title} className={`rounded-2xl ${block.color} p-6`}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
-                  <block.icon className="h-5 w-5 text-zinc-800" />
+            {JOURNEY_STEPS.map((step, i) => (
+              <div key={step.title} className="rounded-2xl border border-zinc-200 p-6">
+                <span className="text-xs font-bold text-zinc-400">0{i + 1}</span>
+                <div className="mt-2 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
+                  <step.icon className="h-5 w-5 text-zinc-700" />
                 </div>
-                <h3 className="mt-4 text-base font-bold text-zinc-900">{block.title}</h3>
-                <p className="mt-2 text-sm text-zinc-700">{block.body}</p>
+                <h3 className="mt-4 text-base font-bold text-zinc-900">{step.title}</h3>
+                <p className="mt-2 text-sm text-zinc-700">{step.body}</p>
               </div>
             ))}
           </div>
@@ -330,10 +302,10 @@ export default async function LandingPage() {
 
       {/* Honest current-state stats, in place of fabricated testimonials */}
       <section className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-        <Users className="mx-auto h-6 w-6 text-zinc-400" />
+        <Sprout className="mx-auto h-6 w-6 text-zinc-400" />
         <h2 className="mt-4 text-xl font-bold text-zinc-900">Early, and growing every week</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
-          PulseGrid is early-stage — {stats.total > 0 ? `${stats.total} verified DFW profiles` : 'a growing DFW directory'}{' '}
+          PulseGrid is early-stage — {stats.total > 0 ? `${stats.total} verified DFW vendors` : 'a growing DFW directory'}{' '}
           today, added to automatically every week. We’d rather tell you that honestly than show you logos we
           don’t have yet.
         </p>
@@ -360,9 +332,9 @@ export default async function LandingPage() {
       {/* Closing CTA */}
       <section className="bg-zinc-900 px-4 py-20 text-center sm:px-6">
         <h2 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-6xl">
-          Bring Every Desi
+          Book With Confidence,
           <br />
-          Booking Under One Roof
+          Not a Guess
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-sm text-zinc-400">
           No trial gimmicks, no credit card — browse the DFW directory free, request an Agency Pass when you need
