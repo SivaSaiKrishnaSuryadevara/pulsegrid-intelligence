@@ -132,6 +132,17 @@ const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[
       /\bevent\s+(design|production|rentals?)\b/i,
     ],
   },
+  {
+    // solo_creator had no positive rule at all before this — it only ever
+    // existed as the requireBioSignal fallback, so once strict mode started
+    // rejecting no-match bios instead of defaulting into it, the
+    // auto-discovery pipeline became structurally unable to ever surface a
+    // real content creator/influencer. These phrases are how creators
+    // actually self-describe (as opposed to e.g. "collab", too generic —
+    // any small business says that).
+    entityType: 'solo_creator',
+    patterns: [/\bcontent\s+creator\b/i, /\bugc\s+creator\b/i, /\binfluencer\b/i, /\bbrand\s+partnerships?\b/i, /\bmedia\s+kit\b/i],
+  },
 ];
 
 /**
