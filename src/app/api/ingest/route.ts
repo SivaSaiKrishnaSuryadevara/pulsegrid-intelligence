@@ -97,6 +97,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponse(400, 'INVALID_REQUEST', `Invalid defaultType "${defaultTypeParam}". Expected one of: ${ENTITY_TYPES.join(', ')}`);
   }
   const defaultType = defaultTypeParam as EntityType;
+  // Set by /api/ingest/discover on the ad-hoc webhook it registers for
+  // auto-discovered (unvetted) batches — see requireBioSignal on
+  // ParseApifyItemOptions. Manually-configured Apify webhooks pointing here
+  // for a human-curated batch omit it, keeping the old defaultType fallback.
+  const strict = searchParams.get('strict') === '1';
 
   let body: ApifyRunFinishedPayload;
   try {
@@ -131,7 +136,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const parseErrors: IngestItemError[] = [];
 
   for (const raw of rawItems as RawApifyProfileItem[]) {
-    const result = parseApifyProfileItem(raw, worker, { metro, defaultType });
+    const result = parseApifyProfileItem(raw, worker, { metro, defaultType, requireBioSignal: strict });
     if (result.ok) {
       payloads.push(result.payload);
     } else {

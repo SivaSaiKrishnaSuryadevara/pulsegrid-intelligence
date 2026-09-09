@@ -99,29 +99,56 @@ export function resolveMetroHub(input: string): MetroHub | null {
 // =====================================================================================
 
 /**
- * Word-boundary matching, not a plain substring check — "dj" as a raw
- * substring would false-positive inside ordinary words like "adjust" or
- * "adjacent", which a bio full of prose will realistically contain.
+ * Phrase-level patterns, not bare dictionary words. An earlier version
+ * matched single generic words anywhere in the bio ("events", "music",
+ * "academy", "host", "speaker", "decor", ...) and it false-positived
+ * constantly on unrelated businesses whose bios happen to contain one of
+ * those ordinary English words — e.g. a digital classifieds/marketing
+ * platform whose bio mentions "...Classifieds, BoxOffice, YellowPages,
+ * Events & HotDeals..." matched `event_planner` on the bare word "Events"
+ * alone. "dj"/"emcee"/"choreograph" are domain-specific enough to stand
+ * alone; everything else now requires event-specific phrasing.
  */
-function bioContainsWord(bio: string, keyword: string): boolean {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`\\b${escaped}\\b`, 'i').test(bio);
-}
-
-const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; keywords: string[] }[] = [
-  { entityType: 'local_dj', keywords: ['dj', 'sound', 'music'] },
-  { entityType: 'dance_troupe', keywords: ['dance', 'choreograph', 'academy'] },
-  { entityType: 'stage_emcee', keywords: ['emcee', 'host', 'anchor', 'speaker'] },
-  { entityType: 'event_planner', keywords: ['planner', 'decor', 'events', 'wedding'] },
+const ENTITY_TYPE_KEYWORD_RULES: { entityType: EntityType; patterns: RegExp[] }[] = [
+  {
+    entityType: 'local_dj',
+    patterns: [/\bdj\b/i, /\bmobile\s+dj\b/i, /\bsound\s+engineer\b/i],
+  },
+  {
+    entityType: 'dance_troupe',
+    patterns: [/\bchoreograph\w*\b/i, /\bdance\s+(troupe|academy|company|crew|team)\b/i],
+  },
+  {
+    entityType: 'stage_emcee',
+    patterns: [/\bemcee\b/i, /\b(event|wedding|stage)\s+host\b/i, /\bkeynote\s+speaker\b/i],
+  },
+  {
+    entityType: 'event_planner',
+    patterns: [
+      /\bevent\s+plann(er|ing)\b/i,
+      /\bwedding\s+planner\b/i,
+      /\bevent\s+coordinat\w*\b/i,
+      /\bdecor\s+(rentals?|hire|design)\b/i,
+      /\bevent\s+(design|production|rentals?)\b/i,
+    ],
+  },
 ];
 
-export function inferEntityType(bio: string, defaultType: EntityType): EntityType {
+/**
+ * `signalText` should be the bio and the profile's display name joined —
+ * IG display names are often the clearest signal ("Dawn Cross - Dallas DJ",
+ * "Kelly Hooper | DFW Female DJ") and a bio alone can say nothing job-
+ * related at all (e.g. "Founder @shespinsglobal. Available worldwide.").
+ * Returns null when neither carries any event-industry signal — callers
+ * decide what "no signal" means (see requireBioSignal below).
+ */
+export function inferEntityType(signalText: string): EntityType | null {
   for (const rule of ENTITY_TYPE_KEYWORD_RULES) {
-    if (rule.keywords.some((keyword) => bioContainsWord(bio, keyword))) {
+    if (rule.patterns.some((pattern) => pattern.test(signalText))) {
       return rule.entityType;
     }
   }
-  return defaultType;
+  return null;
 }
 
 /** No separate niche heuristic — derived from the entity type already inferred from the same bio. */
@@ -252,6 +279,18 @@ function toRecentPosts(raw: RawApifyPost[] | null | undefined): ScrapedPost[] {
 export interface ParseApifyItemOptions {
   metro: MetroHub;
   defaultType: EntityType;
+  /**
+   * When true, a bio with no event-industry signal is rejected instead of
+   * silently falling back to `defaultType`. Off by default so the existing
+   * `ingest:apify` CLI backfill and any manually-curated `/api/ingest` batch
+   * keep working unchanged (a human already vetted those handles, so "no
+   * keyword match" there just means the bio-heuristic can't narrow further
+   * than the given default — not "reject it"). The auto-discovery pipeline
+   * (`/api/ingest/discover`) turns this on: those handles are anyone who
+   * used a tracked hashtag once, unvetted, so "no signal" should mean
+   * "probably not an event professional," not "assume solo_creator."
+   */
+  requireBioSignal?: boolean;
 }
 
 export type ParsedApifyItem =
@@ -270,7 +309,11 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
   }
   const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
   const bio = raw.biography ?? '';
-  const entityType = inferEntityType(bio, opts.defaultType);
+  const inferredType = inferEntityType(`${raw.fullName ?? ''}\n${bio}`);
+  if (inferredType === null && opts.requireBioSignal) {
+    return { ok: false, identifier: handle, error: 'no event-industry signal found in bio — skipped' };
+  }
+  const entityType = inferredType ?? opts.defaultType;
   const recentPosts = toRecentPosts(raw.latestPosts);
   const followerCount = raw.followersCount ?? 0;
 

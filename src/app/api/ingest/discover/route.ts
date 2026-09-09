@@ -185,7 +185,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       [
         {
           eventTypes: ['ACTOR.RUN.SUCCEEDED'],
-          requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metroParam ?? metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}`,
+          // strict=1: these handles are unvetted (anyone who used a tracked
+          // hashtag once), so a bio with no event-industry signal should be
+          // skipped rather than defaulted into defaultTypeParam — see
+          // requireBioSignal in apify-instagram-parser.ts.
+          requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metroParam ?? metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}&strict=1`,
           headersTemplate: JSON.stringify({ 'x-apify-secret': secret }),
         },
       ]
