@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   Banknote,
   CalendarClock,
-  Check,
   Clapperboard,
   FileStack,
   Handshake,
@@ -138,16 +137,11 @@ const CAMPAIGN_BLOCKS = [
 ] as const;
 
 const FIT_SIGNALS = [
-  {
-    number: '01',
-    label: 'Volume',
-    chips: ['Booking 3+ vendors per wedding season', 'Working across multiple DFW venues', 'Expanding beyond one event type'],
-  },
-  {
-    number: '02',
-    label: 'The actual pain',
-    chips: ['Tired of double-booked vendors', 'Want real rates, not Instagram guesswork', 'Juggling separate lists per vendor type'],
-  },
+  { icon: CalendarClock, text: 'Booking 3+ vendors per wedding season' },
+  { icon: MapPin, text: 'Working across multiple DFW venues' },
+  { icon: AlertTriangle, text: 'Tired of double-booked vendors' },
+  { icon: Banknote, text: 'Want real rates, not Instagram guesswork' },
+  { icon: ListChecks, text: 'Juggling separate lists per vendor type' },
 ] as const;
 
 const FAQ_ITEMS = [
@@ -423,21 +417,13 @@ export default async function LandingPage() {
               find, vet, and confirm vendors — without juggling five separate Instagram searches per event.
             </p>
           </div>
-          <div className="mt-8 divide-y divide-zinc-200 border-t border-zinc-200">
-            {FIT_SIGNALS.map((group) => (
-              <div key={group.number} className="grid grid-cols-1 gap-3 py-6 sm:grid-cols-[1fr_3fr] sm:items-center">
-                <span className="text-2xl font-bold text-zinc-300">{group.number}</span>
-                <div className="flex flex-wrap gap-2">
-                  {group.chips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700"
-                    >
-                      <Check className="h-3 w-3 text-emerald-600" />
-                      {chip}
-                    </span>
-                  ))}
+          <div className="mt-8 divide-y divide-zinc-100 border-t border-zinc-200">
+            {FIT_SIGNALS.map((signal) => (
+              <div key={signal.text} className="flex items-center gap-4 py-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
+                  <signal.icon className="h-4 w-4 text-amber-700" />
                 </div>
+                <p className="text-sm font-medium text-zinc-800">{signal.text}</p>
               </div>
             ))}
           </div>
