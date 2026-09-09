@@ -40,6 +40,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { fetchApifyDatasetItems } from '@/lib/ingest/apify-client';
 import { parseApifyProfileItem, resolveMetroHub, type RawApifyProfileItem } from '@/lib/ingest/apify-instagram-parser';
+import { classifyEntityTypesFallbackBatch } from '@/lib/ingest/llm-classifier';
 import { getServiceRoleClient } from '@/lib/supabase/service';
 import { ENTITY_TYPES, type EntityType } from '@/types/creator';
 import { InstagramIngestWorker, type ScrapedCreatorPayload } from '@/workers/ingest-worker';
@@ -134,13 +135,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const worker = new InstagramIngestWorker();
   const payloads: ScrapedCreatorPayload[] = [];
   const parseErrors: IngestItemError[] = [];
+  // Rejected under strict mode (not a missing-username case, which has no
+  // bio to retry) — worth a harder-case LLM look before giving up. See
+  // classifyEntityTypesFallbackBatch.
+  const rejectedForFallback: RawApifyProfileItem[] = [];
 
   for (const raw of rawItems as RawApifyProfileItem[]) {
     const result = parseApifyProfileItem(raw, worker, { metro, defaultType, requireBioSignal: strict });
     if (result.ok) {
       payloads.push(result.payload);
+    } else if (strict && raw?.username) {
+      rejectedForFallback.push(raw);
     } else {
       parseErrors.push({ identifier: result.identifier, error: result.error });
+    }
+  }
+
+  if (rejectedForFallback.length > 0) {
+    const fallbackResults = await classifyEntityTypesFallbackBatch(
+      rejectedForFallback.map((raw) => ({
+        handle: raw.username!.trim().replace(/^@/, '').toLowerCase(),
+        displayName: raw.fullName ?? '',
+        bio: raw.biography ?? '',
+      }))
+    );
+
+    for (const raw of rejectedForFallback) {
+      const handle = raw.username!.trim().replace(/^@/, '').toLowerCase();
+      const llmType = fallbackResults.get(handle);
+      const retried = llmType
+        ? parseApifyProfileItem(raw, worker, { metro, defaultType: llmType, requireBioSignal: false })
+        : null;
+      if (retried?.ok) {
+        payloads.push(retried.payload);
+      } else {
+        parseErrors.push({
+          identifier: handle,
+          error:
+            fallbackResults.has(handle)
+              ? 'no event-industry signal found in bio — skipped (including LLM fallback)'
+              : 'no event-industry signal found in bio — skipped (LLM fallback not attempted, run cap reached)',
+        });
+      }
     }
   }
 
