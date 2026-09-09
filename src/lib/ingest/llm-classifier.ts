@@ -31,12 +31,20 @@ const FallbackClassificationSchema = z.object({
     .enum(ENTITY_TYPES)
     .nullable()
     .describe(
-      'What kind of South Asian event-production entity this account is, if any: solo_creator ' +
-        '(content creator/influencer), stage_emcee (live mic host/anchor), dance_troupe (dance ' +
-        'studio/academy/performance group/choreographer), local_dj (DJ/sound engineer), or ' +
-        'event_planner (decorator/coordinator/producer). null if this is NOT an event professional at ' +
-        'all — most accounts you will see are genuinely unrelated (a restaurant, retail shop, personal ' +
-        'account, unrelated business); return null for those rather than forcing a guess.'
+      'What kind of South Asian event-production entity this account is, if any — and ONLY if the ' +
+        'account itself is personally bookable/hireable for that role, not merely discussing or ' +
+        'covering it: solo_creator (an individual who personally creates and posts sponsored/branded ' +
+        'content — their bio says so, e.g. "content creator," "influencer," "brand partnerships"), ' +
+        'stage_emcee (an individual live mic host/anchor available to hire), dance_troupe (a specific ' +
+        'dance studio/academy/performance group/choreographer offering performances), local_dj (an ' +
+        'individual DJ/sound engineer offering their own DJ services), or event_planner (a specific ' +
+        'decorator/coordinator/production company offering event-planning services). null if this is NOT ' +
+        'an event professional personally offering a bookable service — most accounts you will see are ' +
+        'genuinely unrelated (a restaurant, retail shop, personal account, unrelated business) or, ' +
+        'importantly, a community page / local media outlet / city guide / classifieds or listings ' +
+        'platform that talks ABOUT events, restaurants, or creators without being one itself (e.g. a ' +
+        '"your guide to X" or "discover local Y" account) — those are never solo_creator just because ' +
+        'they post content; return null for those rather than forcing a guess.'
     ),
 });
 
@@ -55,7 +63,10 @@ export async function classifyEntityTypeFallback(displayName: string, bio: strin
         'DJs, dance troupes, stage emcees, event planners, and content creators. A keyword-based first ' +
         'pass already rejected this account as having no obvious signal — you are the harder-case ' +
         'fallback for unusual phrasing, not a second chance to be generous. Most accounts you see ' +
-        'genuinely are NOT event professionals; return null for those rather than forcing a guess.',
+        'genuinely are NOT event professionals; return null for those rather than forcing a guess. The ' +
+        'bar is "personally bookable for this role," not "posts content related to this topic" — a local ' +
+        'events guide, community page, or aggregator account is not a solo_creator just because it posts ' +
+        'about events and culture; it has to be an individual/business personally offering that service.',
       messages: [{ role: 'user', content: `Display name: ${displayName}\nBio: ${bio}` }],
       output_config: { format: zodOutputFormat(FallbackClassificationSchema) },
     });
