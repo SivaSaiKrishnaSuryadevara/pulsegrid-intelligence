@@ -2,7 +2,13 @@
 
 import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import type { CreatorCardModel, FilterCriteria } from '@/types/creator';
-import { ENGAGEMENT_RATE_BOUNDS, NICHE_DISPLAY_LABELS } from './constants';
+import {
+  ENGAGEMENT_RATE_BOUNDS,
+  ENTITY_TYPE_DISPLAY_LABELS,
+  NICHE_DISPLAY_LABELS,
+  REP_TYPE_DISPLAY_LABELS,
+  VENUE_SCALE_LABELS,
+} from './constants';
 
 /** True if `creator` satisfies every active dimension of `criteria`. */
 export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriteria): boolean {
@@ -14,6 +20,10 @@ export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriter
     }
   }
 
+  if (criteria.selectedEntityTypes.length > 0 && !criteria.selectedEntityTypes.includes(creator.entityType)) {
+    return false;
+  }
+
   if (criteria.selectedMetros.length > 0 && !criteria.selectedMetros.includes(creator.primaryMetro)) {
     return false;
   }
@@ -22,11 +32,41 @@ export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriter
     return false;
   }
 
+  if (criteria.selectedRepTypes.length > 0 && !criteria.selectedRepTypes.includes(creator.repType)) {
+    return false;
+  }
+
   if (criteria.secondaryLanguages.length > 0) {
-    const speaksRequestedLanguage = criteria.secondaryLanguages.some((language) =>
-      creator.secondaryLanguages.includes(language)
-    );
-    if (!speaksRequestedLanguage) {
+    // The dialect/genre chip doubles as the DJ genre-tag filter (same
+    // FilterCriteria field, different comparison target) — see
+    // DJ_GENRE_TAG_OPTIONS in constants.ts.
+    const tags =
+      creator.entityDetails.kind === 'local_dj' ? creator.entityDetails.genreTags : creator.secondaryLanguages;
+    const matchesRequestedTag = criteria.secondaryLanguages.some((tag) => tags.includes(tag));
+    if (!matchesRequestedTag) {
+      return false;
+    }
+  }
+
+  if (
+    criteria.entityDetailFilters.minTroupeSize !== null &&
+    creator.entityDetails.kind === 'dance_troupe' &&
+    creator.entityDetails.troupeSize < criteria.entityDetailFilters.minTroupeSize
+  ) {
+    return false;
+  }
+
+  if (
+    criteria.entityDetailFilters.venueScaleBracket !== null &&
+    creator.entityDetails.kind === 'event_planner' &&
+    creator.entityDetails.venueScaleBracket !== criteria.entityDetailFilters.venueScaleBracket
+  ) {
+    return false;
+  }
+
+  if (criteria.entityDetailFilters.avSpecIncluded !== null && creator.entityDetails.kind === 'local_dj') {
+    const hasFullRig = Boolean(creator.entityDetails.avSpecNotes);
+    if (hasFullRig !== criteria.entityDetailFilters.avSpecIncluded) {
       return false;
     }
   }
@@ -57,13 +97,18 @@ export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriter
 export function countActiveFilters(criteria: FilterCriteria): number {
   let count = 0;
   if (criteria.searchQuery.trim().length > 0) count += 1;
+  count += criteria.selectedEntityTypes.length;
   count += criteria.selectedMetros.length;
   count += criteria.selectedNiches.length;
+  count += criteria.selectedRepTypes.length;
   count += criteria.secondaryLanguages.length;
   if (criteria.minER !== null && criteria.minER > ENGAGEMENT_RATE_BOUNDS.min) count += 1;
   if (criteria.maxER !== null && criteria.maxER < ENGAGEMENT_RATE_BOUNDS.max) count += 1;
   if (criteria.availabilityFilter !== 'all') count += 1;
   if (criteria.hideConflicts) count += 1;
+  if (criteria.entityDetailFilters.minTroupeSize !== null) count += 1;
+  if (criteria.entityDetailFilters.venueScaleBracket !== null) count += 1;
+  if (criteria.entityDetailFilters.avSpecIncluded !== null) count += 1;
   return count;
 }
 
@@ -74,11 +119,17 @@ export function describeActiveFilters(criteria: FilterCriteria): string[] {
   const query = criteria.searchQuery.trim();
   if (query) badges.push(`"${query}"`);
 
+  for (const entityType of criteria.selectedEntityTypes) {
+    badges.push(ENTITY_TYPE_DISPLAY_LABELS[entityType]);
+  }
   for (const metro of criteria.selectedMetros) {
     badges.push(METRO_LABELS[metro].shortLabel);
   }
   for (const niche of criteria.selectedNiches) {
     badges.push(NICHE_DISPLAY_LABELS[niche]);
+  }
+  for (const repType of criteria.selectedRepTypes) {
+    badges.push(REP_TYPE_DISPLAY_LABELS[repType]);
   }
   for (const language of criteria.secondaryLanguages) {
     badges.push(language);
@@ -93,6 +144,16 @@ export function describeActiveFilters(criteria: FilterCriteria): string[] {
   if (criteria.availabilityFilter === 'immediate_only') badges.push('Fast Turnaround Only');
   if (criteria.availabilityFilter === 'exclude_closed') badges.push('Excl. Closed/Overbooked');
   if (criteria.hideConflicts) badges.push('No Active Conflicts');
+
+  if (criteria.entityDetailFilters.minTroupeSize !== null) {
+    badges.push(`${criteria.entityDetailFilters.minTroupeSize}+ Dancers`);
+  }
+  if (criteria.entityDetailFilters.venueScaleBracket !== null) {
+    badges.push(VENUE_SCALE_LABELS[criteria.entityDetailFilters.venueScaleBracket]);
+  }
+  if (criteria.entityDetailFilters.avSpecIncluded !== null) {
+    badges.push(criteria.entityDetailFilters.avSpecIncluded ? 'Full Sound + Lighting' : 'Console Only');
+  }
 
   return badges;
 }

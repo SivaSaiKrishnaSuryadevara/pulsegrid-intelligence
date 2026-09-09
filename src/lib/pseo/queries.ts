@@ -22,6 +22,8 @@ import type {
   BookingStatus,
   CreatorProfile,
   EnterpriseType,
+  EntityDetails,
+  EntityType,
   EventEnterprise,
   MetroHub,
   PrimaryNiche,
@@ -38,6 +40,8 @@ interface CreatorRow {
   handle: string;
   display_name: string;
   avatar_url: string | null;
+  entity_type: EntityType;
+  entity_details: EntityDetails;
   primary_metro: MetroHub;
   primary_niche: PrimaryNiche;
   secondary_languages: string[] | null;
@@ -79,6 +83,8 @@ function mapCreatorRow(row: CreatorRow): CreatorProfile {
     handle: row.handle,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
+    entityType: row.entity_type,
+    entityDetails: row.entity_details,
     primaryMetro: row.primary_metro,
     primaryNiche: row.primary_niche,
     secondaryLanguages: row.secondary_languages ?? [],
@@ -150,7 +156,7 @@ export async function getDirectoryPageData(config: DirectoryPageConfig): Promise
     }
 
     let creatorsQuery = supabase
-      .from('creators')
+      .from('production_entities')
       .select('*')
       .eq('primary_metro', config.metro)
       .eq('primary_niche', config.niche)
@@ -200,7 +206,7 @@ export async function getCreatorMediaKit(handle: string): Promise<CreatorMediaKi
     const supabase = getServiceRoleClient();
 
     const { data: creatorRow, error: creatorError } = await supabase
-      .from('creators')
+      .from('production_entities')
       .select('*')
       .eq('handle', normalizedHandle)
       .eq('is_verified', true)
@@ -251,7 +257,7 @@ export async function getVerifiedCreatorHandles(): Promise<VerifiedHandleRecord[
     const supabase = getServiceRoleClient();
 
     const { data, error } = await supabase
-      .from('creators')
+      .from('production_entities')
       .select('handle, updated_at')
       .eq('is_verified', true)
       .order('handle', { ascending: true });

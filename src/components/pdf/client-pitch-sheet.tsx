@@ -24,6 +24,8 @@ export interface PitchSheetCreator {
   displayName: string;
   handle: string;
   avatarUrl: string | null;
+  /** e.g. "🎧 DJ & Sound" — see ENTITY_TYPE_DISPLAY_LABELS/ENTITY_TYPE_EMOJI. */
+  entityTypeLabel: string;
   metroLabel: string;
   languages: string[];
   followerCount: number | null;
@@ -142,6 +144,13 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#6B7280',
     marginTop: 1,
+  },
+  entityTypeTag: {
+    fontSize: 6.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#4338CA',
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -303,6 +312,7 @@ export function ClientPitchSheet({
                     <Text style={styles.handleLine}>
                       @{creator.handle} • {creator.metroLabel}
                     </Text>
+                    <Text style={styles.entityTypeTag}>{creator.entityTypeLabel}</Text>
                   </View>
                 </View>
 

@@ -105,7 +105,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext): Pro
   // client, as specified, rather than trusting anything already in scope.
   const serviceClient = getServiceRoleClient();
   const { data: creatorRow, error: creatorError } = await serviceClient
-    .from('creators')
+    .from('production_entities')
     .select('direct_booking_email, direct_booking_phone, rep_type, deliverability_score')
     .eq('id', creatorId)
     .maybeSingle();

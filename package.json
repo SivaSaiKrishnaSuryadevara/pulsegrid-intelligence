@@ -9,10 +9,14 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "seed": "tsx --env-file=.env.local src/scripts/seed-initial-creators.ts"
+    "seed": "tsx --env-file=.env.local src/scripts/seed-initial-creators.ts",
+    "seed:expanded": "tsx --env-file=.env.local src/scripts/seed-expanded-creators.ts",
+    "ingest:apify": "tsx --env-file=.env.local src/scripts/ingest-apify.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "@radix-ui/react-dialog": "1.1.23",
+    "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-slider": "1.4.7",
     "@radix-ui/react-tabs": "1.1.21",
     "@react-pdf/renderer": "4.9.0",
@@ -25,7 +29,8 @@
     "next": "15.5.25",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwind-merge": "3.6.0"
+    "tailwind-merge": "3.6.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",

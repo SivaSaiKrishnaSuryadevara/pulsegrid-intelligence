@@ -1,6 +1,14 @@
 /** Static configuration for the Discover cockpit — filter options, bounds, and defaults. */
 
-import type { AvailabilityFilter, FilterCriteria, PrimaryNiche } from '@/types/creator';
+import type { AvailabilityFilter, EntityType, EventPlannerDetails, FilterCriteria, PrimaryNiche, RepType } from '@/types/creator';
+
+/** Shared across the creator card, detail drawer, and filter strip's Desk Status chip. */
+export const REP_TYPE_DISPLAY_LABELS: Record<RepType, string> = {
+  DIRECT_MANAGER: 'Direct Manager Desk',
+  TALENT_AGENCY: 'Talent Agency Desk',
+  SELF_REPRESENTED: 'Self-Represented Desk',
+  UNVERIFIED_BIO: 'Unverified Desk',
+};
 
 /**
  * Plain, internal-facing niche labels for the agency-facing cockpit — kept
@@ -15,6 +23,46 @@ export const NICHE_DISPLAY_LABELS: Record<PrimaryNiche, string> = {
   STAGE_EMCEE: 'Stage Emcee',
   FOOD_DINING: 'Food & Dining',
   CHOREOGRAPHY: 'Choreography',
+};
+
+export const ENTITY_TYPE_DISPLAY_LABELS: Record<EntityType, string> = {
+  solo_creator: 'Solo Creator',
+  stage_emcee: 'Stage Emcee',
+  dance_troupe: 'Dance Troupe',
+  local_dj: 'DJ & Sound',
+  event_planner: 'Event Planner',
+};
+
+export const ENTITY_TYPE_EMOJI: Record<EntityType, string> = {
+  solo_creator: '🎤',
+  stage_emcee: '🎤',
+  dance_troupe: '💃',
+  local_dj: '🎧',
+  event_planner: '🏛️',
+};
+
+/**
+ * Shown by the filter strip's dialect/genre chip instead of `LANGUAGE_OPTIONS`
+ * when `local_dj` is the (or one of the) selected entity type(s) — same
+ * underlying `FilterCriteria.secondaryLanguages` field, matched against
+ * `entityDetails.genreTags` instead of `secondaryLanguages` for DJ rows (see
+ * `matchesFilters`). Placeholder list — edit freely before shipping.
+ */
+export const DJ_GENRE_TAG_OPTIONS: readonly string[] = [
+  'Tollywood Mass',
+  'Bollywood',
+  'Bhangra / Punjabi',
+  'EDM',
+  'Hip-Hop / Top 40',
+  'Garba / Raas',
+  'Sufi / Qawwali',
+  'Afrobeats',
+];
+
+export const VENUE_SCALE_LABELS: Record<EventPlannerDetails['venueScaleBracket'], string> = {
+  boutique: 'Boutique 100–500',
+  mid_scale: 'Mid-Scale 500–2,000',
+  grand: 'Festival 2,000–10,000+',
 };
 
 export const LANGUAGE_OPTIONS: readonly string[] = [
@@ -45,11 +93,18 @@ export const AVAILABILITY_MODE_OPTIONS: AvailabilityModeOption[] = [
 
 export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
   searchQuery: '',
+  selectedEntityTypes: [],
   selectedMetros: [],
   selectedNiches: [],
+  selectedRepTypes: [],
   secondaryLanguages: [],
   minER: ENGAGEMENT_RATE_BOUNDS.min,
   maxER: ENGAGEMENT_RATE_BOUNDS.max,
   hideConflicts: false,
   availabilityFilter: 'all',
+  entityDetailFilters: {
+    minTroupeSize: null,
+    venueScaleBracket: null,
+    avSpecIncluded: null,
+  },
 };

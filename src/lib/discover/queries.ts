@@ -18,6 +18,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   BookingStatus,
   CreatorCardModel,
+  EntityDetails,
+  EntityType,
   MetroHub,
   PrimaryNiche,
   RepType,
@@ -28,6 +30,8 @@ const DISCOVERY_COLUMNS = [
   'handle',
   'display_name',
   'avatar_url',
+  'entity_type',
+  'entity_details',
   'primary_metro',
   'primary_niche',
   'secondary_languages',
@@ -52,6 +56,8 @@ interface DiscoveryCreatorRow {
   handle: string;
   display_name: string;
   avatar_url: string | null;
+  entity_type: EntityType;
+  entity_details: EntityDetails;
   primary_metro: MetroHub;
   primary_niche: PrimaryNiche;
   secondary_languages: string[] | null;
@@ -82,7 +88,7 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
   const today = new Date().toISOString().slice(0, 10);
 
   const [creatorsResult, blackoutsResult] = await Promise.all([
-    supabase.from('creators').select(DISCOVERY_COLUMNS).eq('is_verified', true),
+    supabase.from('production_entities').select(DISCOVERY_COLUMNS).eq('is_verified', true),
     supabase
       .from('creator_category_blackouts')
       .select('creator_id, brand_name, category_slug, blackout_end_date')
@@ -120,6 +126,8 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
       handle: row.handle,
       displayName: row.display_name,
       avatarUrl: row.avatar_url,
+      entityType: row.entity_type,
+      entityDetails: row.entity_details,
       primaryMetro: row.primary_metro,
       primaryNiche: row.primary_niche,
       secondaryLanguages: row.secondary_languages ?? [],

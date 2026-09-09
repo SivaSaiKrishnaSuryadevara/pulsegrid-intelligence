@@ -95,7 +95,12 @@ export default async function CommitteeWorkspacePage({ params }: CommitteePagePr
     supabase
       .from('committee_submissions')
       .select(
-        'id, workspace_id, role_applied_for, audition_reel_url, stage_status, creators(id, display_name, handle, avatar_url, primary_metro, primary_niche)'
+        // Aliased to keep the JS-side key `creators` (SubmissionRow.creators,
+        // every `row.creators.*` access below) unchanged even though the
+        // underlying table is `production_entities` — PostgREST resolves an
+        // embedded relation by the actual table name, so this alias is load-
+        // bearing, not cosmetic, after the creators -> production_entities rename.
+        'id, workspace_id, role_applied_for, audition_reel_url, stage_status, creators:production_entities(id, display_name, handle, avatar_url, primary_metro, primary_niche)'
       )
       .eq('workspace_id', workspace.id)
       .order('created_at', { ascending: true }),

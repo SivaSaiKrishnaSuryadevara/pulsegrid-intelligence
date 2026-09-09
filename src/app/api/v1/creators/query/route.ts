@@ -22,9 +22,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { checkRateLimit, DEFAULT_ENTERPRISE_LIMIT, type RateLimitResult } from '@/lib/rate-limit';
 import { getServiceRoleClient } from '@/lib/supabase/service';
 import {
+  ENTITY_TYPES,
   METRO_HUBS,
   PRIMARY_NICHES,
   type BookingStatus,
+  type EntityType,
   type MetroHub,
   type PrimaryNiche,
   type RepType,
@@ -46,6 +48,7 @@ interface CreatorQueryRow {
   handle: string;
   display_name: string;
   avatar_url: string | null;
+  entity_type: EntityType;
   primary_metro: MetroHub;
   primary_niche: PrimaryNiche;
   secondary_languages: string[] | null;
@@ -74,6 +77,7 @@ interface DaasCreatorRecord {
   handle: string;
   displayName: string;
   avatarUrl: string | null;
+  entityType: EntityType;
   primaryMetro: MetroHub;
   primaryNiche: PrimaryNiche;
   secondaryLanguages: string[];
@@ -183,6 +187,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (nicheParam && !PRIMARY_NICHES.includes(nicheParam as PrimaryNiche)) {
     return errorResponse(400, 'INVALID_REQUEST', `niche must be one of: ${PRIMARY_NICHES.join(', ')}`);
   }
+  const entityTypeParam = searchParams.get('entity_type');
+  if (entityTypeParam && !ENTITY_TYPES.includes(entityTypeParam as EntityType)) {
+    return errorResponse(400, 'INVALID_REQUEST', `entity_type must be one of: ${ENTITY_TYPES.join(', ')}`);
+  }
 
   const languageParam = searchParams.get('language');
   const minEr = parseFloatParam(searchParams.get('min_er'));
@@ -195,9 +203,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // Query creators
   // ---------------------------------------------------------------------
   let query = serviceClient
-    .from('creators')
+    .from('production_entities')
     .select(
-      'id, handle, display_name, avatar_url, primary_metro, primary_niche, secondary_languages, follower_count, engagement_rate, avg_reel_views, est_minimum_rate_usd, est_maximum_rate_usd, booking_status, deliverability_score, is_verified, rep_type, direct_booking_email, direct_booking_phone',
+      'id, handle, display_name, avatar_url, entity_type, primary_metro, primary_niche, secondary_languages, follower_count, engagement_rate, avg_reel_views, est_minimum_rate_usd, est_maximum_rate_usd, booking_status, deliverability_score, is_verified, rep_type, direct_booking_email, direct_booking_phone',
       { count: 'exact' }
     )
     .eq('is_verified', true)
@@ -206,6 +214,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (metroParam) query = query.eq('primary_metro', metroParam);
   if (nicheParam) query = query.eq('primary_niche', nicheParam);
+  if (entityTypeParam) query = query.eq('entity_type', entityTypeParam);
   if (languageParam) query = query.contains('secondary_languages', [languageParam]);
   if (minEr !== null) query = query.gte('engagement_rate', minEr);
   if (maxEr !== null) query = query.lte('engagement_rate', maxEr);
@@ -250,6 +259,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       handle: row.handle,
       displayName: row.display_name,
       avatarUrl: row.avatar_url,
+      entityType: row.entity_type,
       primaryMetro: row.primary_metro,
       primaryNiche: row.primary_niche,
       secondaryLanguages: row.secondary_languages ?? [],

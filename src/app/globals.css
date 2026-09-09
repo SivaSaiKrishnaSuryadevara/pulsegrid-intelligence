@@ -1,18 +1,23 @@
 @import 'tailwindcss';
 
 /*
- * The app's dark palette (#0B0D17 canvas, #131728 cards, #1E2337 borders,
- * #6366F1 accent) is applied directly via Tailwind arbitrary-value classes
- * throughout src/app and src/components (e.g. `bg-[#0B0D17]`), not through
- * theme tokens here — so this file only needs to cover page-wide defaults.
+ * "Event Production OS" palette — Modash-style editorial light mode: a
+ * subtle off-white canvas (`#F8F9FA`) with pure white card/drawer surfaces,
+ * replacing the earlier obsidian/zinc dark theme. Every class in that
+ * recipe (zinc-*, arbitrary hex/px values, backdrop-blur, ring-*) is
+ * already valid Tailwind v4 syntax with zero custom CSS required, so —
+ * matching this codebase's existing convention of writing the palette
+ * directly via Tailwind arbitrary-value classes in components rather than
+ * `@theme` tokens — this file only needs to cover the page-wide default
+ * (the `<body>` background/color a component's own classes paint over).
  */
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background-color: #0b0d17;
-  color: #f1f5f9;
+  background-color: #f8f9fa;
+  color: #18181b; /* zinc-900 */
   font-family:
     -apple-system,
     BlinkMacSystemFont,

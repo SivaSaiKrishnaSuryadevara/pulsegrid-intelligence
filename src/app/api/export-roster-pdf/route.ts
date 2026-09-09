@@ -17,11 +17,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { ClientPitchSheet, type PitchSheetCreator } from '@/components/pdf/client-pitch-sheet';
 import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
-import { NICHE_DISPLAY_LABELS } from '@/lib/discover/constants';
+import { ENTITY_TYPE_DISPLAY_LABELS, ENTITY_TYPE_EMOJI, NICHE_DISPLAY_LABELS } from '@/lib/discover/constants';
 import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import { getServerSupabaseClient } from '@/lib/supabase/server';
 import { getServiceRoleClient } from '@/lib/supabase/service';
-import type { BookingStatus, MetroHub, PrimaryNiche, RepType } from '@/types/creator';
+import type { BookingStatus, EntityType, MetroHub, PrimaryNiche, RepType } from '@/types/creator';
 
 export const runtime = 'nodejs';
 
@@ -38,6 +38,7 @@ interface CreatorExportRow {
   handle: string;
   display_name: string;
   avatar_url: string | null;
+  entity_type: EntityType;
   primary_metro: MetroHub;
   primary_niche: PrimaryNiche;
   secondary_languages: string[] | null;
@@ -131,9 +132,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const [profileResult, creatorsResult] = await Promise.all([
     serviceClient.from('profiles').select('agency_name, branding_logo_url, primary_hex_color').eq('id', user.id).maybeSingle(),
     serviceClient
-      .from('creators')
+      .from('production_entities')
       .select(
-        'id, handle, display_name, avatar_url, primary_metro, primary_niche, secondary_languages, follower_count, engagement_rate, avg_reel_views, est_minimum_rate_usd, est_maximum_rate_usd, booking_status, rep_type'
+        'id, handle, display_name, avatar_url, entity_type, primary_metro, primary_niche, secondary_languages, follower_count, engagement_rate, avg_reel_views, est_minimum_rate_usd, est_maximum_rate_usd, booking_status, rep_type'
       )
       .in('id', body.creatorIds),
   ]);
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       displayName: row.display_name,
       handle: row.handle,
       avatarUrl: row.avatar_url,
+      entityTypeLabel: `${ENTITY_TYPE_EMOJI[row.entity_type]} ${ENTITY_TYPE_DISPLAY_LABELS[row.entity_type]}`,
       metroLabel: METRO_LABELS[row.primary_metro].shortLabel,
       languages: row.secondary_languages ?? [],
       followerCount: row.follower_count,

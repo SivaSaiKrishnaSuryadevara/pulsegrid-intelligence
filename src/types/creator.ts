@@ -79,6 +79,22 @@ export const SUBSCRIPTION_TIERS = [
 ] as const;
 export type SubscriptionTier = (typeof SUBSCRIPTION_TIERS)[number];
 
+/**
+ * 1:1 with the Postgres `entity_type` enum (migration 006). Orthogonal to
+ * `PrimaryNiche` — `STAGE_EMCEE` exists in both, as a historical niche tag
+ * here and as its own entity type below; a row's `entityType` drives
+ * type-specific UI/filtering, `primaryNiche` still just describes content
+ * focus.
+ */
+export const ENTITY_TYPES = [
+  'solo_creator',
+  'stage_emcee',
+  'dance_troupe',
+  'local_dj',
+  'event_planner',
+] as const;
+export type EntityType = (typeof ENTITY_TYPES)[number];
+
 // =====================================================================================
 // 2. SHARED PRIMITIVES
 // =====================================================================================
@@ -96,11 +112,69 @@ export type UUID = string;
 // 3. ENTITY INTERFACES (1:1 with database tables)
 // =====================================================================================
 
+/**
+ * Type-specific fields per `EntityType`, stored in `production_entities.entity_details`
+ * (jsonb, migration 006). `kind` deliberately duplicates the parent row's `entityType` —
+ * a small denormalization that buys TS narrowing (`entityDetails.kind === 'local_dj'`)
+ * without a second lookup. Enforced by Zod at ingestion (see the ingest worker /
+ * apify-discovery webhook), not by a DB constraint — jsonb has no structural typing.
+ */
+/**
+ * A single scraped post's thumbnail, kept for the card's visual-proof strip.
+ * `playCount` is null for photo posts (Instagram only reports play counts
+ * for video/reel content).
+ */
+export interface MediaProof {
+  displayUrl: string;
+  shortCode: string;
+  playCount: number | null;
+}
+
+export interface DanceTroupeDetails {
+  kind: 'dance_troupe';
+  troupeSize: number;
+  /** e.g. "Bollywood Fusion", "Bharatanatyam", "Garba/Raas". */
+  style: string;
+  stageRiderNotes?: string;
+  honorariumNote?: string;
+  mediaProofs?: MediaProof[];
+}
+
+export interface LocalDjDetails {
+  kind: 'local_dj';
+  avSpecNotes: string;
+  maxCapacity: number;
+  setLengthMinutes: number;
+  rigSpecNotes?: string;
+  /** e.g. "Tollywood Mass", "Bollywood", "EDM". */
+  genreTags: string[];
+  mediaProofs?: MediaProof[];
+}
+
+export interface EventPlannerDetails {
+  kind: 'event_planner';
+  venueScaleBracket: 'boutique' | 'mid_scale' | 'grand';
+  /** 0–100. */
+  permitRating?: number;
+  portfolioUrl?: string;
+  mediaProofs?: MediaProof[];
+}
+
+/** solo_creator and stage_emcee carry no type-specific fields today. */
+export interface GenericEntityDetails {
+  kind: 'solo_creator' | 'stage_emcee';
+  mediaProofs?: MediaProof[];
+}
+
+export type EntityDetails = DanceTroupeDetails | LocalDjDetails | EventPlannerDetails | GenericEntityDetails;
+
 export interface CreatorProfile {
   id: UUID;
   handle: string;
   displayName: string;
   avatarUrl: string | null;
+  entityType: EntityType;
+  entityDetails: EntityDetails;
   primaryMetro: MetroHub;
   primaryNiche: PrimaryNiche;
   secondaryLanguages: string[];
@@ -230,8 +304,12 @@ export type AvailabilityFilter = 'all' | 'immediate_only' | 'exclude_closed';
 /** Search/facet state for the creator directory (mirrors the Typesense query). */
 export interface FilterCriteria {
   searchQuery: string;
+  /** Empty array = "All Production" (no entity-type restriction). */
+  selectedEntityTypes: EntityType[];
   selectedMetros: MetroHub[];
   selectedNiches: PrimaryNiche[];
+  /** "Desk Status" filter chip — direct-managed/agency desks vs. self-represented. */
+  selectedRepTypes: RepType[];
   secondaryLanguages: string[];
   /** Minimum engagement rate, percentage points (0–100), or null for no floor. */
   minER: number | null;
@@ -240,6 +318,20 @@ export interface FilterCriteria {
   /** When true, exclude creators with an active category blackout from results. */
   hideConflicts: boolean;
   availabilityFilter: AvailabilityFilter;
+  /**
+   * Entity-specific sub-filter values, read against `entityDetails` at
+   * filter time (see `matchesFilters`). Kept as one small optional bag
+   * rather than a field per entity type — only `dance_troupe`/
+   * `event_planner` need a dedicated value today; `local_dj`'s genre
+   * filter reuses `secondaryLanguages` (the filter-strip swaps its option
+   * list to genre tags for that entity type, same underlying field).
+   */
+  entityDetailFilters: {
+    minTroupeSize: number | null;
+    venueScaleBracket: EventPlannerDetails['venueScaleBracket'] | null;
+    /** Full Sound + Stage Lighting Included (true) vs. Console Only (false); null = no filter. */
+    avSpecIncluded: boolean | null;
+  };
 }
 
 /**

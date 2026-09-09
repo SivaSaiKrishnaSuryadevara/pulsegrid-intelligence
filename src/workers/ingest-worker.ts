@@ -2,8 +2,11 @@
  * PulseGrid Intelligence — Instagram Ingestion Worker
  *
  * Normalizes raw scraped Instagram profile/post data into PulseGrid's
- * domain shape and writes it into Supabase (`creators`,
- * `creator_category_blackouts`, `event_enterprises`).
+ * domain shape and writes it into Supabase (`production_entities`,
+ * `creator_category_blackouts`, `event_enterprises`). `production_entities`
+ * covers all 5 entity types (solo_creator, stage_emcee, dance_troupe,
+ * local_dj, event_planner) — Instagram remains the primary scrape source
+ * across all of them, so the class/method names stay Instagram-flavored.
  *
  * Design notes:
  *  - Bulk upserts are attempted first for throughput; any chunk that fails
@@ -29,11 +32,14 @@ import {
   METRO_HUBS,
   PRIMARY_NICHES,
   ENTERPRISE_TYPES,
+  ENTITY_TYPES,
   type MetroHub,
   type PrimaryNiche,
   type BookingStatus,
   type RepType,
   type EnterpriseType,
+  type EntityType,
+  type EntityDetails,
 } from '../types/creator';
 
 // =====================================================================================
@@ -61,6 +67,10 @@ export interface ScrapedCreatorPayload {
   avatarUrl?: string | null;
   bio: string;
   externalUrl?: string | null;
+  /** Defaults to 'solo_creator' when omitted — keeps existing/older callers (e.g. seed scripts) compiling as-is. */
+  entityType?: EntityType;
+  /** Defaults to `{ kind: entityType }` when omitted. */
+  entityDetails?: EntityDetails;
   primaryMetro: MetroHub;
   primaryNiche: PrimaryNiche;
   secondaryLanguages?: string[];
@@ -139,6 +149,8 @@ interface CreatorUpsertRow {
   handle: string;
   display_name: string;
   avatar_url: string | null;
+  entity_type: EntityType;
+  entity_details: EntityDetails;
   primary_metro: MetroHub;
   primary_niche: PrimaryNiche;
   secondary_languages: string[];
@@ -260,8 +272,8 @@ const VERTICAL_BRAND_DICTIONARY: Record<string, { brandName: string; categorySlu
   ubereats: { brandName: 'Uber Eats', categorySlug: 'food-dining' },
   grubhub: { brandName: 'Grubhub', categorySlug: 'food-dining' },
   postmates: { brandName: 'Postmates', categorySlug: 'food-dining' },
-  redbull: { brandName: 'Red Bull', categorySlug: 'nightlife' },
-  ketelone: { brandName: 'Ketel One', categorySlug: 'nightlife' },
+  redbull: { brandName: 'Red Bull', categorySlug: 'beverage' },
+  ketelone: { brandName: 'Ketel One', categorySlug: 'beverage' },
   livenation: { brandName: 'Live Nation', categorySlug: 'nightlife' },
   tacobell: { brandName: 'Taco Bell', categorySlug: 'food-dining' },
   target: { brandName: 'Target', categorySlug: 'consumer-retail' },
@@ -269,7 +281,7 @@ const VERTICAL_BRAND_DICTIONARY: Record<string, { brandName: string; categorySlu
   sephora: { brandName: 'Sephora', categorySlug: 'consumer-retail' },
   ulta: { brandName: 'Ulta Beauty', categorySlug: 'consumer-retail' },
   amazonfashion: { brandName: 'Amazon Fashion', categorySlug: 'consumer-retail' },
-  americanexpress: { brandName: 'American Express', categorySlug: 'consumer-retail' },
+  americanexpress: { brandName: 'American Express', categorySlug: 'banking' },
 };
 
 // =====================================================================================
@@ -687,6 +699,9 @@ export class InstagramIngestWorker {
     if (!PRIMARY_NICHES.includes(payload.primaryNiche)) {
       problems.push(`primaryNiche "${String(payload.primaryNiche)}" is not a recognized primary_niche`);
     }
+    if (payload.entityType != null && !ENTITY_TYPES.includes(payload.entityType)) {
+      problems.push(`entityType "${String(payload.entityType)}" is not a recognized entity_type`);
+    }
     if (payload.engagementRate != null && (payload.engagementRate < 0 || payload.engagementRate > 100)) {
       problems.push('engagementRate must be between 0 and 100');
     }
@@ -753,10 +768,17 @@ export class InstagramIngestWorker {
     parsedBio: BioParseResult,
     availability: AvailabilityEvaluation
   ): CreatorUpsertRow {
+    const entityType: EntityType = payload.entityType ?? 'solo_creator';
     const row: CreatorUpsertRow = {
       handle: normalizeHandle(payload.handle),
       display_name: payload.displayName.trim(),
       avatar_url: payload.avatarUrl ?? null,
+      entity_type: entityType,
+      // Minimal fallback when the caller omits entityDetails — always valid
+      // for solo_creator/stage_emcee; for the other 3 types this is an
+      // intentionally incomplete placeholder (callers that need the full
+      // rider/spec fields, e.g. the Apify webhook, should supply them).
+      entity_details: payload.entityDetails ?? ({ kind: entityType } as EntityDetails),
       primary_metro: payload.primaryMetro,
       primary_niche: payload.primaryNiche,
       secondary_languages: payload.secondaryLanguages ?? [],
@@ -830,7 +852,7 @@ export class InstagramIngestWorker {
     for (const group of groups.values()) {
       for (const batch of chunk(group, BATCH_CHUNK_SIZE)) {
         const { data, error } = await supabaseClient
-          .from('creators')
+          .from('production_entities')
           .upsert(batch, { onConflict: 'handle' })
           .select('id, handle');
 
@@ -845,7 +867,7 @@ export class InstagramIngestWorker {
         // retrying one at a time instead of dropping the whole chunk.
         const settled = await mapWithConcurrency(batch, WRITE_CONCURRENCY, async (row) => {
           const { data: rowData, error: rowError } = await supabaseClient
-            .from('creators')
+            .from('production_entities')
             .upsert(row, { onConflict: 'handle' })
             .select('id, handle')
             .single();
