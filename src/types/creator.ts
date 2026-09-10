@@ -191,6 +191,8 @@ export interface CreatorProfile {
   repType: RepType;
   directBookingEmail: string | null;
   directBookingPhone: string | null;
+  /** Public link-in-bio URL — unlike the two fields above, not unlock-gated (see discover/queries.ts). */
+  publicLinkUrl: string | null;
   /** 0–100 composite score reflecting how reliably outreach reaches the creator. */
   deliverabilityScore: number | null;
   isVerified: boolean;

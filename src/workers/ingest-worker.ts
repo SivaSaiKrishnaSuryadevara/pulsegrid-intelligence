@@ -178,6 +178,13 @@ interface CreatorUpsertRow {
   rep_type: RepType;
   direct_booking_email: string | null;
   direct_booking_phone: string | null;
+  /**
+   * Public link-in-bio URL (Instagram's own `external_url`, or a
+   * recognized link-hub pattern found in the bio text) — not gated behind
+   * a contact-unlock credit like the two fields above, since it's already
+   * visible to anyone on the creator's actual Instagram profile.
+   */
+  public_link_url: string | null;
   is_verified: boolean;
   last_refreshed_at: string;
   deliverability_score?: number;
@@ -811,6 +818,10 @@ export class InstagramIngestWorker {
       rep_type: parsedBio.repType,
       direct_booking_email: parsedBio.email,
       direct_booking_phone: parsedBio.phone ?? parsedBio.whatsapp,
+      // Prefer Instagram's own external_url (the single most authoritative
+      // "this is my official link" signal) over a link-hub pattern merely
+      // found inside the bio text.
+      public_link_url: payload.externalUrl?.trim() || parsedBio.linkHub?.url || null,
       is_verified: payload.isVerified ?? false,
       last_refreshed_at: new Date().toISOString(),
     };

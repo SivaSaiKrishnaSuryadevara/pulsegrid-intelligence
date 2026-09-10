@@ -5,8 +5,10 @@ import * as Tabs from '@radix-ui/react-tabs';
 import {
   BadgeCheck,
   Check,
+  ConciergeBell,
   Copy,
   DollarSign,
+  ExternalLink,
   Eye,
   Lock,
   MapPin,
@@ -20,6 +22,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/pseo/avatar';
+import { ConciergeRequestModal } from '@/components/discover/concierge-request-modal';
 import { OutreachBriefForm } from '@/components/discover/outreach-brief-form';
 import { EXCLUSIVITY_TONE, getAvailabilityBadge } from '@/lib/discover/availability';
 import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
@@ -69,6 +72,7 @@ export function CreatorDetailDrawer({
   );
   const [blackoutHistory, setBlackoutHistory] = useState<BlackoutHistoryEntry[]>([]);
   const [historyLoadError, setHistoryLoadError] = useState<string | null>(null);
+  const [conciergeOpen, setConciergeOpen] = useState(false);
 
   const creatorId = creator?.id ?? null;
 
@@ -82,6 +86,7 @@ export function CreatorDetailDrawer({
     setBlackoutHistory([]);
     setHistoryLoadError(null);
     setUnlockState(isDeskRevealed ? 'unlocking' : 'locked');
+    setConciergeOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creatorId]);
 
@@ -195,6 +200,7 @@ export function CreatorDetailDrawer({
                     unlockError={unlockError}
                     revealedContact={revealedContact}
                     onUnlockClick={handleUnlockClick}
+                    onRequestConcierge={() => setConciergeOpen(true)}
                   />
                 </Tabs.Content>
 
@@ -202,6 +208,8 @@ export function CreatorDetailDrawer({
                   <RiderTab creator={creator} contactEmail={revealedContact?.directBookingEmail ?? null} />
                 </Tabs.Content>
               </Tabs.Root>
+
+              <ConciergeRequestModal open={conciergeOpen} onOpenChange={setConciergeOpen} creator={creator} />
             </>
           )}
         </Dialog.Content>
@@ -461,6 +469,11 @@ function BrandHistoryTab({ entries, loadError }: { entries: BlackoutHistoryEntry
 // Tab 3 — Verified Talent Desk & Representation
 // =====================================================================================
 
+/** Softens the "Unverified Desk" wording once a desk is actually unlocked — the flat REP_TYPE_DISPLAY_LABELS used elsewhere (grid cards, filter chips) is a scan-friendly category tag; here, with real detail in view, "unverified" reads as a red flag rather than the accurate "no agency/manager email pattern found" it actually means. */
+function representationLabel(repType: RepType): string {
+  return repType === 'UNVERIFIED_BIO' ? 'Independent / Inquire for Representation' : REP_TYPE_DISPLAY_LABELS[repType];
+}
+
 function TalentDeskTab({
   creator,
   creditsRemaining,
@@ -468,6 +481,7 @@ function TalentDeskTab({
   unlockError,
   revealedContact,
   onUnlockClick,
+  onRequestConcierge,
 }: {
   creator: CreatorCardModel;
   creditsRemaining: number;
@@ -475,8 +489,11 @@ function TalentDeskTab({
   unlockError: string | null;
   revealedContact: Extract<ContactUnlockPayload, { success: true }>['contact'] | null;
   onUnlockClick: () => void;
+  onRequestConcierge: () => void;
 }) {
   if (unlockState === 'unlocked' && revealedContact) {
+    const hasDirectContact = Boolean(revealedContact.directBookingEmail || revealedContact.directBookingPhone);
+
     return (
       <section className="space-y-4">
         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700">
@@ -484,12 +501,20 @@ function TalentDeskTab({
           Desk unlocked — representation details below are live.
         </div>
 
-        <ContactRow label="Email" value={revealedContact.directBookingEmail} />
-        <ContactRow label="Phone" value={revealedContact.directBookingPhone} />
+        <PublicLinkCallout url={creator.publicLinkUrl} />
+
+        {hasDirectContact ? (
+          <>
+            <ContactRow label="Email" value={revealedContact.directBookingEmail} />
+            <ContactRow label="Phone" value={revealedContact.directBookingPhone} />
+          </>
+        ) : (
+          <ConciergeHandoffTile onRequestIntroduction={onRequestConcierge} />
+        )}
 
         <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-3">
           <p className="text-[10px] uppercase tracking-wide text-zinc-500">Representation</p>
-          <p className="mt-1 text-sm font-semibold text-zinc-900">{REP_TYPE_DISPLAY_LABELS[revealedContact.repType]}</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-900">{representationLabel(revealedContact.repType)}</p>
         </div>
 
         <DeliverabilityBadge score={revealedContact.deliverabilityScore} repType={revealedContact.repType} />
@@ -499,6 +524,8 @@ function TalentDeskTab({
 
   return (
     <section className="space-y-4">
+      <PublicLinkCallout url={creator.publicLinkUrl} />
+
       <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-100 p-4">
         <p className="text-[10px] uppercase tracking-wide text-zinc-500">Booking Contact</p>
         <p className="mt-2 select-none font-mono text-sm text-zinc-600 blur-[3px]" aria-hidden="true">
@@ -530,6 +557,50 @@ function TalentDeskTab({
       </button>
       <p className="text-center text-[11px] text-zinc-600">{creditsRemaining} unlock credit{creditsRemaining === 1 ? '' : 's'} remaining</p>
     </section>
+  );
+}
+
+function PublicLinkCallout({ url }: { url: string | null }) {
+  if (!url) return null;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white p-3 transition-all hover:border-emerald-400"
+    >
+      <span className="min-w-0">
+        <span className="block text-[10px] uppercase tracking-wide text-zinc-500">Official Booking / Press Link</span>
+        <span className="mt-0.5 block truncate text-sm font-medium text-zinc-900">{url}</span>
+      </span>
+      <ExternalLink className="h-4 w-4 shrink-0 text-zinc-500" />
+    </a>
+  );
+}
+
+function ConciergeHandoffTile({ onRequestIntroduction }: { onRequestIntroduction: () => void }) {
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+      <div className="flex items-start gap-2.5">
+        <ConciergeBell className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">Direct Representation via PulseGrid Concierge</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
+            Direct contact line is held under concierge representation or private routing. Submit a talent rider or
+            booking inquiry, and our production desk will coordinate availability, fees, and deliverables within 24
+            hours.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onRequestIntroduction}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-zinc-800"
+      >
+        Request Introduction &amp; Availability
+      </button>
+    </div>
   );
 }
 

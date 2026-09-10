@@ -56,6 +56,7 @@ interface CreatorRow {
   rep_type: RepType;
   direct_booking_email: string | null;
   direct_booking_phone: string | null;
+  public_link_url: string | null;
   deliverability_score: number | null;
   is_verified: boolean;
   last_refreshed_at: string;
@@ -99,6 +100,7 @@ function mapCreatorRow(row: CreatorRow): CreatorProfile {
     repType: row.rep_type,
     directBookingEmail: row.direct_booking_email,
     directBookingPhone: row.direct_booking_phone,
+    publicLinkUrl: row.public_link_url,
     deliverabilityScore: row.deliverability_score,
     isVerified: row.is_verified,
     lastRefreshedAt: row.last_refreshed_at,
