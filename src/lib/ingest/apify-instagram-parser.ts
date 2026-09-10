@@ -213,17 +213,16 @@ const CULTURAL_SIGNAL_PATTERNS: RegExp[] = [
   /\bpunjabi\b/i,
   /\bgarba\b/i,
   /\braas\b/i,
-  /\bsangeet\b/i,
-  /\bmehndi\b/i,
-  /\bhaldi\b/i,
-  /\bbaraat\b/i,
-  /\bqawwali\b/i,
+  /\bsangeets?\b/i,
+  /\bmehndis?\b/i,
+  /\bhaldis?\b/i,
+  /\bbaraats?\b/i,
+  /\bqawwalis?\b/i,
   /\bsufi\b/i,
   /\bbharatanatyam\b/i,
   /\bkathak\b/i,
-  /\bbollywood\b/i,
   /\bdiaspora\b/i,
-  /\bindian\s+wedding\b/i,
+  /\bindian\s+weddings?\b/i,
   // Regional Indian/South Asian languages — same list `inferSecondaryLanguages`
   // scans for, minus English (not itself a cultural signal).
   /\bhindi\b/i,
@@ -235,11 +234,56 @@ const CULTURAL_SIGNAL_PATTERNS: RegExp[] = [
   /\bkannada\b/i,
   /\bmarathi\b/i,
   /\bbengali\b/i,
+  // Culinary — a real gap the language/dance/wedding vocabulary above
+  // missed entirely, despite Food & Dining being an existing PrimaryNiche.
+  /\bchais?\b/i,
+  /\bmasalas?\b/i,
+  /\bcurr(?:y|ies)\b/i,
+  /\bchutneys?\b/i,
+  /\bbiryanis?\b/i,
+  /\brotis?\b/i,
+  /\bmithai\b/i,
+  /\bhalwas?\b/i,
+  /\btandoori\b/i,
+  // Regional origin markers — South Asian cities/states/regions (India,
+  // Pakistan, Bangladesh), independent of the language list above (a bio
+  // can name a city without naming a language, or vice versa).
+  /\bdelhi\b/i,
+  /\bmumbai\b/i,
+  /\bhyderabad\b/i,
+  /\bbangalore\b/i,
+  /\bpunjab\b/i,
+  /\bkerala\b/i,
+  /\bgujarat\b/i,
+  /\bchennai\b/i,
+  /\bkolkata\b/i,
+  /\blahore\b/i,
+  /\bkarachi\b/i,
+  /\bdhaka\b/i,
 ];
 
-/** NFKD-normalizes first — see inferEntityType for why (stylized bio fonts). */
+/**
+ * Inserts a space at camelCase/acronym word boundaries so a concatenated
+ * handle or hashtag like "MrsTeluguUSA" or "#DesiWeddingDFW" reads as
+ * "Mrs Telugu USA" / "Desi Wedding DFW" before the `\bword\b` patterns
+ * above run — confirmed necessary in production: a Telugu pageant
+ * winner's "MrsTeluguUSA" bio mention didn't match `\btelugu\b` as one
+ * unbroken token. Deliberately NOT solved by dropping word boundaries and
+ * matching as a bare substring instead — that reintroduces real
+ * collisions this file already ships regional keywords for: "desi" is
+ * the first four letters of "desire", "chai" of "chain"/"blockchain",
+ * "garba" of "garbage". Splitting first keeps every pattern word-bounded
+ * (safe) while still catching the concatenated case (correct).
+ */
+function splitCamelCase(text: string): string {
+  return text
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2') // aB -> a B
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2'); // ABCDef -> ABC Def
+}
+
+/** Splits camelCase/acronym runs, then NFKD-normalizes — see inferEntityType for why NFKD (stylized bio fonts). */
 export function hasCulturalSignal(rawSignalText: string): boolean {
-  const signalText = rawSignalText.normalize('NFKD');
+  const signalText = splitCamelCase(rawSignalText).normalize('NFKD');
   return CULTURAL_SIGNAL_PATTERNS.some((pattern) => pattern.test(signalText));
 }
 
