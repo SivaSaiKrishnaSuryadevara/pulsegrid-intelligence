@@ -10,15 +10,13 @@ import {
   AVAILABILITY_MODE_OPTIONS,
   DJ_GENRE_TAG_OPTIONS,
   ENGAGEMENT_RATE_BOUNDS,
-  LANGUAGE_OPTIONS,
   NICHE_DISPLAY_LABELS,
+  PRIMARY_METRO_FILTER_OPTIONS,
   REP_TYPE_DISPLAY_LABELS,
   VENUE_SCALE_LABELS,
 } from '@/lib/discover/constants';
 import { countActiveFilters } from '@/lib/discover/filters';
-import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import {
-  METRO_HUBS,
   PRIMARY_NICHES,
   REP_TYPES,
   type EventPlannerDetails,
@@ -32,6 +30,8 @@ export interface FilterStripProps {
   value: FilterCriteria;
   onChange: (next: FilterCriteria) => void;
   onReset: () => void;
+  /** Languages actually present in the loaded dataset — the Dialect chip (non-DJ case) shows exactly these, never a fixed list that can go stale or show options with zero matches. */
+  availableLanguages: string[];
 }
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -47,7 +47,7 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-export function FilterStrip({ value, onChange, onReset }: FilterStripProps) {
+export function FilterStrip({ value, onChange, onReset, availableLanguages }: FilterStripProps) {
   const [searchInput, setSearchInput] = useState(value.searchQuery);
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const activeFilterCount = countActiveFilters(value);
@@ -110,10 +110,10 @@ export function FilterStrip({ value, onChange, onReset }: FilterStripProps) {
 
       <FilterChip label="📍 Metro Hub" activeCount={value.selectedMetros.length}>
         <ChipList>
-          {METRO_HUBS.map((metro) => (
+          {PRIMARY_METRO_FILTER_OPTIONS.map(({ metro, label }) => (
             <CheckOption
               key={metro}
-              label={METRO_LABELS[metro].shortLabel}
+              label={label}
               checked={value.selectedMetros.includes(metro)}
               onToggle={() => toggleMetro(metro)}
             />
@@ -123,7 +123,12 @@ export function FilterStrip({ value, onChange, onReset }: FilterStripProps) {
 
       <FilterChip label={isDjSelected ? '🗣️ Genre' : '🗣️ Dialect / Genre'} activeCount={value.secondaryLanguages.length}>
         <ChipList>
-          {(isDjSelected ? DJ_GENRE_TAG_OPTIONS : LANGUAGE_OPTIONS).map((tag) => (
+          {(isDjSelected ? DJ_GENRE_TAG_OPTIONS : availableLanguages).length === 0 && (
+            <p className="px-2.5 py-1.5 text-xs text-zinc-500">
+              {isDjSelected ? 'No genre tags on file yet.' : 'No dialects on file yet.'}
+            </p>
+          )}
+          {(isDjSelected ? DJ_GENRE_TAG_OPTIONS : availableLanguages).map((tag) => (
             <CheckOption
               key={tag}
               label={tag}

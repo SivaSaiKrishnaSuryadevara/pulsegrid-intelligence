@@ -4,7 +4,7 @@
  * Stage 1->2 orchestrator for fully-autonomous regional discovery. Apify
  * webhook target for the *hashtag-discovery* task's run-succeeded event
  * (an `apify/instagram-hashtag-scraper` run over regional hashtags like
- * #dfwevents) — NOT the same contract as `/api/ingest`, whose dataset is
+ * #dfwdesievents) — NOT the same contract as `/api/ingest`, whose dataset is
  * Instagram *profiles*. This route's dataset is Instagram *posts*
  * (`ownerUsername`, caption, ...); pointing a profile-shaped payload at
  * this route, or a post-shaped payload at `/api/ingest`, would silently
@@ -18,19 +18,34 @@
  *     re-spending Apify credits re-scraping known creators every cycle
  *     isn't the default. (If you want existing creators refreshed too,
  *     remove the `.not('handle', 'in', ...)` filter below.)
- *  3. Caps the remaining list at MAX_DISCOVERED_HANDLES per run — a hashtag
- *     crawl can return far more authors than is sensible to enrich (and
- *     pay for) in one cycle.
- *  4. Starts a NEW `apify/instagram-profile-scraper` run with that handle
- *     list as input, with an AD-HOC webhook attached directly to that run
- *     (via the `webhooks` param on the "start run" call — see
- *     `startApifyActorRun`) pointing back at `/api/ingest`. No second
- *     persistent webhook needs to exist in the Apify console for the
- *     enrichment stage; it's wired up dynamically, per invocation, here.
+ *  3. Groups the remaining handles by METRO — derived per-post from which
+ *     tracked hashtag surfaced it (HASHTAG_TO_METRO below), not from a
+ *     single `?metro=` query param applied to the whole batch. This
+ *     matters once the underlying schedule tracks hashtags across
+ *     multiple regions in one run (DFW + DMV + ATX + HOU + CLT): a single
+ *     global metro would mislabel every non-DFW discovery as DFW. `?metro=`
+ *     on this route's own URL is now only a FALLBACK default for a post
+ *     whose hashtag isn't in the dictionary (typically a generic,
+ *     non-regional tag like #desisinusa) — not an override.
+ *  4. Caps each metro group at MAX_DISCOVERED_HANDLES_PER_METRO — a
+ *     hashtag crawl can return far more authors than is sensible to
+ *     enrich (and pay for) in one cycle, and a per-metro cap keeps one
+ *     region's hashtag volume from crowding out another's.
+ *  5. Starts one NEW `apify/instagram-profile-scraper` run PER metro group
+ *     that has new handles, each with its own AD-HOC webhook (via the
+ *     `webhooks` param on `startApifyActorRun`) carrying that metro's own
+ *     `?metro=` value, pointing back at `/api/ingest`. No persistent
+ *     webhook needs to exist in the Apify console for the enrichment
+ *     stage; it's wired up dynamically, per invocation, here.
  *
  * Stage 3 (bio-keyword entity-type filtering + upsert into
  * production_entities) is unchanged, existing code — it's just whatever
- * runs when that ad-hoc-webhook-triggered run lands on `/api/ingest`.
+ * runs when an ad-hoc-webhook-triggered run lands on `/api/ingest`. Per-
+ * profile locality detection there (inferLocality in
+ * apify-instagram-parser.ts) is a second, more precise line of defense on
+ * top of this route's per-hashtag metro guess: a profile whose bio names
+ * a specific suburb gets classified from that, regardless of which
+ * hashtag or metro fallback surfaced it here.
  *
  * Auth: same shared-secret pattern as `/api/ingest` — `x-apify-secret`
  * header against `process.env.APIFY_WEBHOOK_SECRET`.
@@ -43,10 +58,53 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { fetchApifyDatasetItems, startApifyActorRun } from '@/lib/ingest/apify-client';
 import { resolveMetroHub } from '@/lib/ingest/apify-instagram-parser';
 import { getServiceRoleClient } from '@/lib/supabase/service';
-import { ENTITY_TYPES, type EntityType } from '@/types/creator';
+import { ENTITY_TYPES, type EntityType, type MetroHub } from '@/types/creator';
 
 const PROFILE_SCRAPER_ACTOR_ID = 'apify/instagram-profile-scraper';
-const MAX_DISCOVERED_HANDLES = 50;
+const MAX_DISCOVERED_HANDLES_PER_METRO = 15;
+
+/**
+ * Tracked regional hashtags -> the metro they mean. Kept here (not in
+ * apify-instagram-parser.ts) because this is specifically about which
+ * hashtag surfaced a post during DISCOVERY, a different signal from the
+ * bio-text suburb matching `inferLocality` does during profile parsing —
+ * the two are independent and deliberately not merged into one dictionary.
+ * A hashtag not listed here (generic tags like #desisinusa, or one added
+ * to the schedule but not yet added here) falls back to this route's own
+ * `?metro=` query param default.
+ */
+const HASHTAG_TO_METRO: Record<string, MetroHub> = {
+  // DFW
+  dfwfoodie: 'DFW_TEXAS',
+  dallasdesievents: 'DFW_TEXAS',
+  dfwinfluencer: 'DFW_TEXAS',
+  dallasblogger: 'DFW_TEXAS',
+  // DMV
+  dmvevents: 'DMV_NOVA',
+  novaweddings: 'DMV_NOVA',
+  dmvdesi: 'DMV_NOVA',
+  dcweddings: 'DMV_NOVA',
+  dmvcreators: 'DMV_NOVA',
+  dcevents: 'DMV_NOVA',
+  // Austin
+  austindesi: 'AUSTIN_TX',
+  austinevents: 'AUSTIN_TX',
+  atxfoodie: 'AUSTIN_TX',
+  roundrockevents: 'AUSTIN_TX',
+  austinweddingplanner: 'AUSTIN_TX',
+  // Houston
+  houstondesi: 'HOUSTON_TX',
+  houstonevents: 'HOUSTON_TX',
+  houstonfoodie: 'HOUSTON_TX',
+  // Carolinas
+  charlottedesi: 'CLT_CAROLINAS',
+  cltevents: 'CLT_CAROLINAS',
+  charlotteweddings: 'CLT_CAROLINAS',
+  raleighdesi: 'CLT_CAROLINAS',
+  caryevents: 'CLT_CAROLINAS',
+  morrisvilledesi: 'CLT_CAROLINAS',
+  cltfoodie: 'CLT_CAROLINAS',
+};
 
 interface ApifyRunFinishedPayload {
   datasetId?: string;
@@ -55,7 +113,7 @@ interface ApifyRunFinishedPayload {
 
 interface HashtagPostItem {
   ownerUsername?: string | null;
-  /** e.g. "https://www.instagram.com/explore/tags/dfwdesievents/" — the only field in the scraper's output that says which tracked hashtag surfaced this post (`hashtags` is the post's OWN caption tags, unrelated). Used to keep MAX_DISCOVERED_HANDLES from being dominated by whichever hashtag the actor happens to write to the dataset first. */
+  /** e.g. "https://www.instagram.com/explore/tags/dfwdesievents/" — the only field in the scraper's output that says which tracked hashtag surfaced this post (`hashtags` is the post's OWN caption tags, unrelated). Used both to derive metro (HASHTAG_TO_METRO) and to keep MAX_DISCOVERED_HANDLES_PER_METRO from being dominated by whichever hashtag the actor happens to write to the dataset first. */
   inputUrl?: string | null;
 }
 
@@ -72,10 +130,10 @@ function extractHashtagLabel(inputUrl: string | null | undefined): string {
  * arbitrarily-ordered global list let whichever hashtag the actor happens
  * to write last get silently zeroed out once earlier hashtags filled the
  * cap — confirmed in production: #dfwdesievents (13 authors) was written
- * last across a 5-hashtag run and every one of its authors fell past
- * MAX_DISCOVERED_HANDLES=50, so zero of them ever reached profile
- * enrichment. Round-robin guarantees every tracked hashtag gets a fair
- * share before any one hashtag gets a second pick.
+ * last across a 5-hashtag run and every one of its authors fell past the
+ * cap, so zero of them ever reached profile enrichment. Round-robin
+ * guarantees every tracked hashtag gets a fair share before any one
+ * hashtag gets a second pick.
  */
 function selectFairlyAcrossHashtags(groupedHandles: Map<string, string[]>, max: number): string[] {
   const queues = Array.from(groupedHandles.values()).map((handles) => [...handles]);
@@ -123,13 +181,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { searchParams, origin } = request.nextUrl;
 
+  // Fallback default only now — see the HASHTAG_TO_METRO header note.
+  // Still required to be a resolvable value when provided at all, so a
+  // typo'd query param fails loudly rather than silently defaulting.
   const metroParam = searchParams.get('metro');
-  const metro = metroParam ? resolveMetroHub(metroParam) : null;
-  if (!metro) {
+  const fallbackMetro = metroParam ? resolveMetroHub(metroParam) : 'DFW_TEXAS';
+  if (metroParam && !fallbackMetro) {
     return errorResponse(
       400,
       'INVALID_REQUEST',
-      'Missing or unrecognized ?metro= query param. Expected a short code (DFW, DMV, HOU, ATX, NYC/NJ, ATL, CHI) or the full metro_hub value.'
+      'Unrecognized ?metro= query param. Expected a short code (DFW, DMV, HOU, ATX, CLT, NYC/NJ, ATL, CHI) or the full metro_hub value.'
     );
   }
 
@@ -160,7 +221,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---------------------------------------------------------------------
-  // Fetch the hashtag-scrape dataset and extract unique authors.
+  // Fetch the hashtag-scrape dataset and extract unique authors, grouped
+  // by metro (derived per-post from its hashtag) and, within each metro,
+  // by the specific hashtag (for fairness — see selectFairlyAcrossHashtags).
   // ---------------------------------------------------------------------
   let rawPosts: unknown[];
   try {
@@ -169,28 +232,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponse(502, 'DATASET_FETCH_FAILED', errorMessage(err));
   }
 
-  // Grouped by tracked hashtag (dataset-encounter order preserved within
-  // each group) so the cap below can be applied fairly — see
-  // selectFairlyAcrossHashtags. A handle stays in whichever hashtag group
-  // it was first seen under if it appears under more than one.
-  const handlesByHashtag = new Map<string, string[]>();
+  const handlesByMetroThenHashtag = new Map<MetroHub, Map<string, string[]>>();
   const seenHandles = new Set<string>();
   for (const item of rawPosts as HashtagPostItem[]) {
     const username = item?.ownerUsername?.trim().toLowerCase();
     if (!username) continue;
     if (seenHandles.has(username)) continue;
     seenHandles.add(username);
+
     const tag = extractHashtagLabel(item.inputUrl);
-    const group = handlesByHashtag.get(tag) ?? [];
+    const metro = HASHTAG_TO_METRO[tag] ?? fallbackMetro ?? 'DFW_TEXAS';
+
+    const hashtagGroups = handlesByMetroThenHashtag.get(metro) ?? new Map<string, string[]>();
+    const group = hashtagGroups.get(tag) ?? [];
     group.push(username);
-    handlesByHashtag.set(tag, group);
+    hashtagGroups.set(tag, group);
+    handlesByMetroThenHashtag.set(metro, hashtagGroups);
   }
   const discoveredHandles = seenHandles;
 
   // ---------------------------------------------------------------------
   // Drop handles already on file (discovery, not a refresh job — see
-  // header note), then cap the batch — fairly across hashtags, not by a
-  // flat prefix slice (see selectFairlyAcrossHashtags).
+  // header note), then cap each metro group — fairly across that metro's
+  // own hashtags, not by a flat prefix slice.
   // ---------------------------------------------------------------------
   const serviceClient = getServiceRoleClient();
   const { data: existingRows, error: existingError } = await serviceClient
@@ -203,54 +267,63 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const existingHandles = new Set((existingRows ?? []).map((r) => (r as { handle: string }).handle));
-  const newHandlesByHashtag = new Map(
-    Array.from(handlesByHashtag.entries()).map(([tag, handles]) => [
-      tag,
-      handles.filter((handle) => !existingHandles.has(handle)),
-    ])
-  );
-  const newHandles = selectFairlyAcrossHashtags(newHandlesByHashtag, MAX_DISCOVERED_HANDLES);
 
-  if (newHandles.length === 0) {
+  const newHandlesByMetro = new Map<MetroHub, string[]>();
+  for (const [metro, hashtagGroups] of handlesByMetroThenHashtag.entries()) {
+    const filteredGroups = new Map(
+      Array.from(hashtagGroups.entries()).map(([tag, handles]) => [tag, handles.filter((h) => !existingHandles.has(h))])
+    );
+    const selected = selectFairlyAcrossHashtags(filteredGroups, MAX_DISCOVERED_HANDLES_PER_METRO);
+    if (selected.length > 0) newHandlesByMetro.set(metro, selected);
+  }
+
+  if (newHandlesByMetro.size === 0) {
     return NextResponse.json({
       datasetId,
       postsScanned: rawPosts.length,
       uniqueAuthorsFound: discoveredHandles.size,
       alreadyOnFile: existingHandles.size,
-      newHandlesEnriching: 0,
-      enrichmentRunId: null,
+      metrosEnriching: 0,
+      enrichmentRuns: [],
     });
   }
 
   // ---------------------------------------------------------------------
-  // Stage 2: start the profile-enrichment run, with an ad-hoc webhook
-  // wired directly to /api/ingest for THIS run only.
+  // Stage 2: start one profile-enrichment run PER metro group, each with
+  // its own ad-hoc webhook wired directly to /api/ingest?metro=<that
+  // metro> — this is what actually prevents the Austin/Houston/DMV/CLT
+  // mislabeling-as-DFW problem described in the header note.
   // ---------------------------------------------------------------------
   const secret = process.env.APIFY_WEBHOOK_SECRET;
   if (!secret) {
     return errorResponse(500, 'CONFIGURATION_ERROR', 'Missing APIFY_WEBHOOK_SECRET environment variable.');
   }
 
-  let enrichmentRun: { runId: string; datasetId: string };
-  try {
-    enrichmentRun = await startApifyActorRun(
-      PROFILE_SCRAPER_ACTOR_ID,
-      { usernames: newHandles },
-      apiToken,
-      [
-        {
-          eventTypes: ['ACTOR.RUN.SUCCEEDED'],
-          // strict=1: these handles are unvetted (anyone who used a tracked
-          // hashtag once), so a bio with no event-industry signal should be
-          // skipped rather than defaulted into defaultTypeParam — see
-          // requireBioSignal in apify-instagram-parser.ts.
-          requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metroParam ?? metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}&strict=1`,
-          headersTemplate: JSON.stringify({ 'x-apify-secret': secret }),
-        },
-      ]
-    );
-  } catch (err) {
-    return errorResponse(502, 'ENRICHMENT_START_FAILED', errorMessage(err));
+  const enrichmentRuns: { metro: MetroHub; handleCount: number; runId: string }[] = [];
+  const enrichmentErrors: { metro: MetroHub; error: string }[] = [];
+
+  for (const [metro, handles] of newHandlesByMetro.entries()) {
+    try {
+      const run = await startApifyActorRun(
+        PROFILE_SCRAPER_ACTOR_ID,
+        { usernames: handles },
+        apiToken,
+        [
+          {
+            eventTypes: ['ACTOR.RUN.SUCCEEDED'],
+            // strict=1: these handles are unvetted (anyone who used a tracked
+            // hashtag once), so a bio with no event-industry signal should be
+            // skipped rather than defaulted into defaultTypeParam — see
+            // requireBioSignal in apify-instagram-parser.ts.
+            requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}&strict=1`,
+            headersTemplate: JSON.stringify({ 'x-apify-secret': secret }),
+          },
+        ]
+      );
+      enrichmentRuns.push({ metro, handleCount: handles.length, runId: run.runId });
+    } catch (err) {
+      enrichmentErrors.push({ metro, error: errorMessage(err) });
+    }
   }
 
   return NextResponse.json({
@@ -258,7 +331,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     postsScanned: rawPosts.length,
     uniqueAuthorsFound: discoveredHandles.size,
     alreadyOnFile: existingHandles.size,
-    newHandlesEnriching: newHandles.length,
-    enrichmentRunId: enrichmentRun.runId,
+    metrosEnriching: enrichmentRuns.length,
+    enrichmentRuns,
+    enrichmentErrors: enrichmentErrors.length > 0 ? enrichmentErrors : undefined,
   });
 }

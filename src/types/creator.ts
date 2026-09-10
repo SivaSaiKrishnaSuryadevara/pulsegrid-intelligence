@@ -23,6 +23,7 @@ export const METRO_HUBS = [
   'TRI_STATE_NY_NJ',
   'ATLANTA_GA',
   'CHICAGO_IL',
+  'CLT_CAROLINAS',
 ] as const;
 export type MetroHub = (typeof METRO_HUBS)[number];
 
@@ -195,6 +196,8 @@ export interface CreatorProfile {
   publicLinkUrl: string | null;
   /** Raw scraped bio text — used for Discover's quick-search substring match; not otherwise rendered. */
   bio: string | null;
+  /** Specific suburb/city display name (e.g. "Ashburn, VA") from the suburb-to-metro normalizer — distinct from primaryMetro, the parent hub used for filtering. Null falls back to the metro's short label on the card badge. */
+  locality: string | null;
   /** 0–100 composite score reflecting how reliably outreach reaches the creator. */
   deliverabilityScore: number | null;
   isVerified: boolean;

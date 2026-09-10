@@ -86,6 +86,8 @@ export interface ScrapedCreatorPayload {
   /** Defaults to `{ kind: entityType }` when omitted. */
   entityDetails?: EntityDetails;
   primaryMetro: MetroHub;
+  /** Specific suburb/city display name (e.g. "Ashburn, VA") — set by the suburb-to-metro normalizer when the bio names one; null shows the metro's short label on the card badge instead. */
+  locality?: string | null;
   primaryNiche: PrimaryNiche;
   secondaryLanguages?: string[];
   followerCount?: number | null;
@@ -116,7 +118,7 @@ export interface ScrapedEnterprisePayload {
   frequentVenues?: string[];
 }
 
-export type LinkHubPlatform = 'linktree' | 'beacons' | 'eventbrite' | 'sulekha';
+export type LinkHubPlatform = 'linktree' | 'beacons' | 'stan_store' | 'eventbrite' | 'sulekha';
 
 export interface BioParseResult {
   email: string | null;
@@ -187,6 +189,7 @@ interface CreatorUpsertRow {
   public_link_url: string | null;
   /** Raw bio text — powers Discover's quick-search substring match, not otherwise rendered. */
   bio: string | null;
+  locality: string | null;
   is_verified: boolean;
   last_refreshed_at: string;
   deliverability_score?: number;
@@ -250,6 +253,7 @@ const GENERIC_PHONE_RE = /(\+?\d[\d\s().-]{7,}\d)/;
 const LINK_HUB_PATTERNS: { platform: LinkHubPlatform; re: RegExp }[] = [
   { platform: 'linktree', re: /(?:https?:\/\/)?(?:www\.)?linktr\.ee\/[\w.-]+/i },
   { platform: 'beacons', re: /(?:https?:\/\/)?(?:www\.)?beacons\.ai\/[\w.-]+/i },
+  { platform: 'stan_store', re: /(?:https?:\/\/)?(?:www\.)?stan\.store\/[\w.-]+/i },
   { platform: 'eventbrite', re: /(?:https?:\/\/)?(?:www\.)?eventbrite\.com\/[\w\-/]+/i },
   { platform: 'sulekha', re: /(?:https?:\/\/)?(?:www\.)?sulekha\.com\/[\w\-/]+/i },
 ];
@@ -808,6 +812,7 @@ export class InstagramIngestWorker {
       // rider/spec fields, e.g. the Apify webhook, should supply them).
       entity_details: payload.entityDetails ?? ({ kind: entityType } as EntityDetails),
       primary_metro: payload.primaryMetro,
+      locality: payload.locality ?? null,
       primary_niche: payload.primaryNiche,
       secondary_languages: payload.secondaryLanguages ?? [],
       follower_count: payload.followerCount ?? null,

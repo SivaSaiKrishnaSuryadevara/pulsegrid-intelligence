@@ -47,6 +47,7 @@ const DISCOVERY_COLUMNS = [
   'deliverability_score',
   'public_link_url',
   'bio',
+  'locality',
   'is_verified',
   'last_refreshed_at',
   'created_at',
@@ -75,6 +76,7 @@ interface DiscoveryCreatorRow {
   deliverability_score: number | null;
   public_link_url: string | null;
   bio: string | null;
+  locality: string | null;
   is_verified: boolean;
   last_refreshed_at: string;
   created_at: string;
@@ -148,6 +150,7 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
       directBookingPhone: null, // deliberately never fetched client-side — see file header
       publicLinkUrl: row.public_link_url,
       bio: row.bio,
+      locality: row.locality,
       deliverabilityScore: row.deliverability_score,
       isVerified: row.is_verified,
       lastRefreshedAt: row.last_refreshed_at,

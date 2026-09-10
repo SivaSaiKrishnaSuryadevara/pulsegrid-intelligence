@@ -110,7 +110,7 @@ export function VisualCreatorCard({
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-800">
                 <MapPin className="h-3 w-3" />
-                {metroMeta.shortLabel}
+                {creator.locality ?? metroMeta.shortLabel}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-800">
                 {getEntityBadgeLabel(creator)}

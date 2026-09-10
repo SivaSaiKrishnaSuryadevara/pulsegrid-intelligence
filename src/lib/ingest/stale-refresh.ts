@@ -36,11 +36,12 @@ export interface StaleCreatorRow {
   secondary_languages: string[];
   est_minimum_rate_usd: number | null;
   est_maximum_rate_usd: number | null;
+  locality: string | null;
   last_refreshed_at: string;
 }
 
 const STALE_ROW_COLUMNS =
-  'handle, entity_type, entity_details, primary_metro, primary_niche, secondary_languages, est_minimum_rate_usd, est_maximum_rate_usd, last_refreshed_at';
+  'handle, entity_type, entity_details, primary_metro, primary_niche, secondary_languages, est_minimum_rate_usd, est_maximum_rate_usd, locality, last_refreshed_at';
 
 /** Rows whose `last_refreshed_at` is older than `staleDays`, oldest first, capped at `limit`. */
 export async function queryStaleCreators(
@@ -127,6 +128,7 @@ export function buildRefreshPayloads(
       secondaryLanguages: existing.secondary_languages,
       estMinimumRateUsd: existing.est_minimum_rate_usd,
       estMaximumRateUsd: existing.est_maximum_rate_usd,
+      locality: existing.locality,
     });
     if (result.ok) {
       payloads.push(result.payload);

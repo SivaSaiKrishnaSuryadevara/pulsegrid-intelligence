@@ -36,6 +36,7 @@ export const METRO_LABELS: Record<MetroHub, MetroLabel> = {
   TRI_STATE_NY_NJ: { label: 'New York City & the Tri-State Area', shortLabel: 'NYC/NJ' },
   ATLANTA_GA: { label: 'Atlanta, Georgia', shortLabel: 'ATL' },
   CHICAGO_IL: { label: 'Chicago, Illinois', shortLabel: 'CHI' },
+  CLT_CAROLINAS: { label: 'Charlotte & the Carolinas', shortLabel: 'CLT' },
 };
 
 interface NicheLabel {
@@ -97,6 +98,7 @@ export const LAUNCH_METROS: LaunchHub[] = [
   { slug: 'houston-tx', metro: 'HOUSTON_TX' },
   { slug: 'tri-state-ny-nj', metro: 'TRI_STATE_NY_NJ' },
   { slug: 'atlanta-ga', metro: 'ATLANTA_GA' },
+  { slug: 'clt-carolinas', metro: 'CLT_CAROLINAS' },
 ];
 
 interface LaunchNiche {

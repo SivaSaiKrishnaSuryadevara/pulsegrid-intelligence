@@ -83,6 +83,7 @@ export const METRO_SHORT_CODE_TO_HUB: Record<string, MetroHub> = {
   'NYC/NJ': 'TRI_STATE_NY_NJ',
   ATL: 'ATLANTA_GA',
   CHI: 'CHICAGO_IL',
+  CLT: 'CLT_CAROLINAS',
 };
 
 /** Accepts either a short code (DFW) or the full Postgres enum value (DFW_TEXAS). */
@@ -264,6 +265,139 @@ export function inferSecondaryLanguages(rawSignalText: string): string[] {
 }
 
 // =====================================================================================
+// Suburb -> metro normalization
+// =====================================================================================
+
+interface SuburbEntry {
+  /** Matched as `\b<keyword>\b` (internal spaces become `\s+`) against the same NFKD-normalized signalText used elsewhere in this file. */
+  keyword: string;
+  metroHub: MetroHub;
+  /**
+   * Properly-cased "City, ST" display string for the talent card's metro
+   * badge — `null` for bare regional acronyms/generic terms (dc, nova,
+   * dmv, atx, hou, clt, triangle) where a specific-locality badge
+   * wouldn't read as a real place, even though the keyword still routes
+   * the profile to the right metroHub for filtering.
+   */
+  locality: string | null;
+}
+
+/**
+ * One entry per suburb/keyword (not grouped by metro) so each carries its
+ * own display-cased locality independently. A few of these are bare,
+ * generic-sounding words with elevated false-positive risk as a `\b`-bounded
+ * bio match — kept because they were given explicitly, flagged here so a
+ * noisy misclassification is easy to trace back to its source:
+ *  - "nova": also a common first name/brand word, not just Northern Virginia.
+ *  - "dmv": also literally the Department of Motor Vehicles.
+ *  - "spring": an ordinary English word (season, verb) far more often than
+ *    it means Spring, TX — kept metro-routing only, no locality badge.
+ *  - "triangle": a common shape/generic word, not just the Raleigh-Durham area.
+ */
+const SUBURB_TO_METRO: SuburbEntry[] = [
+  // DFW
+  { keyword: 'dallas', metroHub: 'DFW_TEXAS', locality: 'Dallas, TX' },
+  { keyword: 'fort worth', metroHub: 'DFW_TEXAS', locality: 'Fort Worth, TX' },
+  { keyword: 'plano', metroHub: 'DFW_TEXAS', locality: 'Plano, TX' },
+  { keyword: 'frisco', metroHub: 'DFW_TEXAS', locality: 'Frisco, TX' },
+  { keyword: 'irving', metroHub: 'DFW_TEXAS', locality: 'Irving, TX' },
+  { keyword: 'mckinney', metroHub: 'DFW_TEXAS', locality: 'McKinney, TX' },
+  { keyword: 'allen', metroHub: 'DFW_TEXAS', locality: 'Allen, TX' },
+  { keyword: 'prosper', metroHub: 'DFW_TEXAS', locality: 'Prosper, TX' },
+  { keyword: 'celina', metroHub: 'DFW_TEXAS', locality: 'Celina, TX' },
+  { keyword: 'aubrey', metroHub: 'DFW_TEXAS', locality: 'Aubrey, TX' },
+  { keyword: 'denton', metroHub: 'DFW_TEXAS', locality: 'Denton, TX' },
+  { keyword: 'southlake', metroHub: 'DFW_TEXAS', locality: 'Southlake, TX' },
+  { keyword: 'carrollton', metroHub: 'DFW_TEXAS', locality: 'Carrollton, TX' },
+  { keyword: 'lewisville', metroHub: 'DFW_TEXAS', locality: 'Lewisville, TX' },
+  { keyword: 'richardson', metroHub: 'DFW_TEXAS', locality: 'Richardson, TX' },
+  // DMV
+  { keyword: 'washington', metroHub: 'DMV_NOVA', locality: 'Washington, DC' },
+  { keyword: 'dc', metroHub: 'DMV_NOVA', locality: null },
+  { keyword: 'fairfax', metroHub: 'DMV_NOVA', locality: 'Fairfax, VA' },
+  { keyword: 'ashburn', metroHub: 'DMV_NOVA', locality: 'Ashburn, VA' },
+  { keyword: 'loudoun', metroHub: 'DMV_NOVA', locality: 'Loudoun County, VA' },
+  { keyword: 'sterling', metroHub: 'DMV_NOVA', locality: 'Sterling, VA' },
+  { keyword: 'leesburg', metroHub: 'DMV_NOVA', locality: 'Leesburg, VA' },
+  { keyword: 'tysons', metroHub: 'DMV_NOVA', locality: 'Tysons, VA' },
+  { keyword: 'alexandria', metroHub: 'DMV_NOVA', locality: 'Alexandria, VA' },
+  { keyword: 'arlington', metroHub: 'DMV_NOVA', locality: 'Arlington, VA' },
+  { keyword: 'bethesda', metroHub: 'DMV_NOVA', locality: 'Bethesda, MD' },
+  { keyword: 'rockville', metroHub: 'DMV_NOVA', locality: 'Rockville, MD' },
+  { keyword: 'silver spring', metroHub: 'DMV_NOVA', locality: 'Silver Spring, MD' },
+  { keyword: 'gaithersburg', metroHub: 'DMV_NOVA', locality: 'Gaithersburg, MD' },
+  { keyword: 'frederick', metroHub: 'DMV_NOVA', locality: 'Frederick, MD' },
+  { keyword: 'baltimore', metroHub: 'DMV_NOVA', locality: 'Baltimore, MD' },
+  { keyword: 'howard county', metroHub: 'DMV_NOVA', locality: 'Howard County, MD' },
+  { keyword: 'columbia', metroHub: 'DMV_NOVA', locality: 'Columbia, MD' },
+  { keyword: 'nova', metroHub: 'DMV_NOVA', locality: null },
+  { keyword: 'dmv', metroHub: 'DMV_NOVA', locality: null },
+  // ATX
+  { keyword: 'austin', metroHub: 'AUSTIN_TX', locality: 'Austin, TX' },
+  { keyword: 'round rock', metroHub: 'AUSTIN_TX', locality: 'Round Rock, TX' },
+  { keyword: 'cedar park', metroHub: 'AUSTIN_TX', locality: 'Cedar Park, TX' },
+  { keyword: 'leander', metroHub: 'AUSTIN_TX', locality: 'Leander, TX' },
+  { keyword: 'georgetown', metroHub: 'AUSTIN_TX', locality: 'Georgetown, TX' },
+  { keyword: 'pflugerville', metroHub: 'AUSTIN_TX', locality: 'Pflugerville, TX' },
+  { keyword: 'san marcos', metroHub: 'AUSTIN_TX', locality: 'San Marcos, TX' },
+  { keyword: 'atx', metroHub: 'AUSTIN_TX', locality: null },
+  // HOU
+  { keyword: 'houston', metroHub: 'HOUSTON_TX', locality: 'Houston, TX' },
+  { keyword: 'sugar land', metroHub: 'HOUSTON_TX', locality: 'Sugar Land, TX' },
+  { keyword: 'katy', metroHub: 'HOUSTON_TX', locality: 'Katy, TX' },
+  { keyword: 'woodlands', metroHub: 'HOUSTON_TX', locality: 'The Woodlands, TX' },
+  { keyword: 'cypress', metroHub: 'HOUSTON_TX', locality: 'Cypress, TX' },
+  { keyword: 'pearland', metroHub: 'HOUSTON_TX', locality: 'Pearland, TX' },
+  { keyword: 'spring', metroHub: 'HOUSTON_TX', locality: null },
+  { keyword: 'hou', metroHub: 'HOUSTON_TX', locality: null },
+  // CLT (Carolinas)
+  { keyword: 'charlotte', metroHub: 'CLT_CAROLINAS', locality: 'Charlotte, NC' },
+  { keyword: 'ballantyne', metroHub: 'CLT_CAROLINAS', locality: 'Ballantyne, NC' },
+  { keyword: 'matthews', metroHub: 'CLT_CAROLINAS', locality: 'Matthews, NC' },
+  { keyword: 'pineville', metroHub: 'CLT_CAROLINAS', locality: 'Pineville, NC' },
+  { keyword: 'fort mill', metroHub: 'CLT_CAROLINAS', locality: 'Fort Mill, SC' },
+  { keyword: 'indian land', metroHub: 'CLT_CAROLINAS', locality: 'Indian Land, SC' },
+  { keyword: 'raleigh', metroHub: 'CLT_CAROLINAS', locality: 'Raleigh, NC' },
+  { keyword: 'durham', metroHub: 'CLT_CAROLINAS', locality: 'Durham, NC' },
+  { keyword: 'cary', metroHub: 'CLT_CAROLINAS', locality: 'Cary, NC' },
+  { keyword: 'morrisville', metroHub: 'CLT_CAROLINAS', locality: 'Morrisville, NC' },
+  { keyword: 'clt', metroHub: 'CLT_CAROLINAS', locality: null },
+  { keyword: 'triangle', metroHub: 'CLT_CAROLINAS', locality: null },
+];
+
+export interface LocalityMatch {
+  metroHub: MetroHub;
+  locality: string | null;
+}
+
+/**
+ * Scans `rawSignalText` (the same fullName+bio join used elsewhere in this
+ * file) for a known suburb/city/regional keyword. When multiple keywords
+ * match, the earliest position in the text wins — same tie-break as
+ * `inferEntityType`, for the same reason: bios conventionally lead with
+ * the detail the person considers most specific/primary (a bio reading
+ * "Ashburn, VA \n serving the DMV" should badge as Ashburn, not fall back
+ * to the generic "dmv" mention that happens to appear too). Returns null
+ * when nothing in SUBURB_TO_METRO matches — callers keep whatever metro
+ * they already had (the batch-level assignment for new discovery, the
+ * pinned classification for a refresh).
+ */
+export function inferLocality(rawSignalText: string): LocalityMatch | null {
+  const signalText = rawSignalText.normalize('NFKD');
+  let best: SuburbEntry | null = null;
+  let bestIndex = Infinity;
+  for (const entry of SUBURB_TO_METRO) {
+    const pattern = new RegExp(`\\b${entry.keyword.replace(/\s+/g, '\\s+')}\\b`, 'i');
+    const match = signalText.match(pattern);
+    if (match?.index !== undefined && match.index < bestIndex) {
+      bestIndex = match.index;
+      best = entry;
+    }
+  }
+  return best ? { metroHub: best.metroHub, locality: best.locality } : null;
+}
+
+// =====================================================================================
 // Telemetry derived from latestPosts
 // =====================================================================================
 
@@ -422,6 +556,11 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
     entityDetails.genreTags = inferGenreTags(signalText);
   }
   const secondaryLanguages = inferSecondaryLanguages(signalText);
+  // A suburb/city named in the bio is a more precise signal than the
+  // batch-level --metro flag (which really only says "which hashtag/task
+  // scraped this"), so it wins when present; otherwise fall back to opts.metro
+  // exactly as before.
+  const localityMatch = inferLocality(signalText);
 
   const engagementRate = computeEngagementRate(raw.latestPosts, followerCount);
   const rateRange = estimateRateRangeUsd(followerCount, engagementRate);
@@ -435,7 +574,8 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
     entityType,
     entityDetails,
     secondaryLanguages,
-    primaryMetro: opts.metro,
+    primaryMetro: localityMatch?.metroHub ?? opts.metro,
+    locality: localityMatch?.locality ?? null,
     primaryNiche: ENTITY_TYPE_TO_DEFAULT_NICHE[entityType],
     followerCount,
     engagementRate,
@@ -463,6 +603,7 @@ export interface ExistingClassification {
   secondaryLanguages: string[];
   estMinimumRateUsd: number | null;
   estMaximumRateUsd: number | null;
+  locality: string | null;
 }
 
 /**
@@ -489,6 +630,7 @@ export function parseApifyProfileItemForRefresh(
   }
   const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
   const bio = raw.biography ?? '';
+  const signalText = `${raw.fullName ?? ''}\n${bio}`;
   const recentPosts = toRecentPosts(raw.latestPosts);
   const followerCount = raw.followersCount ?? 0;
 
@@ -510,8 +652,21 @@ export function parseApifyProfileItemForRefresh(
     mediaProofs: extractMediaProofs(raw.latestPosts),
   };
   if (entityDetails.kind === 'local_dj') {
-    entityDetails.genreTags = inferGenreTags(`${raw.fullName ?? ''}\n${bio}`);
+    entityDetails.genreTags = inferGenreTags(signalText);
   }
+
+  // primaryMetro stays pinned (classification) even on refresh — but
+  // locality is closer to telemetry (a nicer display badge, not a
+  // filtering-critical field) so it's safe to refresh EXCEPT when the
+  // freshly-detected suburb implies a different metro than the pinned
+  // one, which would produce a locality badge that contradicts the
+  // creator's actual (pinned) metro — in that case keep whatever
+  // locality was already on file rather than show a mismatched one.
+  const localityMatch = inferLocality(signalText);
+  const locality =
+    localityMatch && localityMatch.metroHub === existing.primaryMetro
+      ? (localityMatch.locality ?? existing.locality)
+      : existing.locality;
 
   const engagementRate = computeEngagementRate(raw.latestPosts, followerCount);
 
@@ -525,6 +680,7 @@ export function parseApifyProfileItemForRefresh(
     entityDetails,
     secondaryLanguages: existing.secondaryLanguages,
     primaryMetro: existing.primaryMetro,
+    locality,
     primaryNiche: existing.primaryNiche,
     followerCount,
     engagementRate,

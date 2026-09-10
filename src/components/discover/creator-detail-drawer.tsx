@@ -587,9 +587,8 @@ function ConciergeHandoffTile({ onRequestIntroduction }: { onRequestIntroduction
         <div>
           <p className="text-sm font-semibold text-zinc-900">Direct Representation via PulseGrid Concierge</p>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
-            Direct contact line is held under concierge representation or private routing. Submit a talent rider or
-            booking inquiry, and our production desk will coordinate availability, fees, and deliverables within 24
-            hours.
+            Direct routing is managed via our concierge desk. Submit event specifications or a talent rider, and our
+            production desk will confirm availability and terms within 24 hours.
           </p>
         </div>
       </div>

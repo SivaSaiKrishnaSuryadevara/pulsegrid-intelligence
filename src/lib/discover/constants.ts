@@ -1,6 +1,25 @@
 /** Static configuration for the Discover cockpit — filter options, bounds, and defaults. */
 
-import type { AvailabilityFilter, EntityType, EventPlannerDetails, FilterCriteria, PrimaryNiche, RepType } from '@/types/creator';
+import type { AvailabilityFilter, EntityType, EventPlannerDetails, FilterCriteria, MetroHub, PrimaryNiche, RepType } from '@/types/creator';
+
+/**
+ * The 5 hubs the Metro Hub filter chip actually offers, with the exact
+ * display copy this cockpit uses (deliberately distinct from
+ * `METRO_LABELS` in `src/lib/pseo/directory-config.ts`, whose copy is
+ * tuned for public SEO page titles, not a filter chip). Narrower than the
+ * full `METRO_HUBS` enum on purpose — TRI_STATE_NY_NJ/ATLANTA_GA/
+ * CHICAGO_IL stay valid, filterable-by-search values and keep their pSEO
+ * directory pages, they're just not offered as a Metro Hub chip option
+ * (matching how `LAUNCH_METROS` already treats CHICAGO_IL as enum-valid
+ * but not launched).
+ */
+export const PRIMARY_METRO_FILTER_OPTIONS: { metro: MetroHub; label: string }[] = [
+  { metro: 'DFW_TEXAS', label: 'Dallas–Fort Worth (DFW)' },
+  { metro: 'AUSTIN_TX', label: 'Austin (ATX)' },
+  { metro: 'HOUSTON_TX', label: 'Houston (HOU)' },
+  { metro: 'DMV_NOVA', label: 'Washington DC / MD / VA (DMV)' },
+  { metro: 'CLT_CAROLINAS', label: 'Carolinas (CLT / Triangle)' },
+];
 
 /** Shared across the creator card, detail drawer, and filter strip's Desk Status chip. */
 export const REP_TYPE_DISPLAY_LABELS: Record<RepType, string> = {

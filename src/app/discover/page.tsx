@@ -121,6 +121,14 @@ export default function DiscoverPage() {
   const activeFilterCount = countActiveFilters(filters);
   const activeFilterBadges = useMemo(() => describeActiveFilters(filters), [filters]);
 
+  // The Dialect chip only ever offers languages some creator in the
+  // loaded dataset actually has — never a fixed list that can drift stale
+  // or show an option nothing matches.
+  const availableLanguages = useMemo(
+    () => Array.from(new Set(allCreators.flatMap((creator) => creator.secondaryLanguages))).sort(),
+    [allCreators]
+  );
+
   const inspectingCreator = useMemo(
     () => allCreators.find((creator) => creator.id === inspectingCreatorId) ?? null,
     [allCreators, inspectingCreatorId]
@@ -287,7 +295,7 @@ export default function DiscoverPage() {
         />
 
         <div className="mt-4">
-          <FilterStrip value={filters} onChange={setFilters} onReset={handleReset} />
+          <FilterStrip value={filters} onChange={setFilters} onReset={handleReset} availableLanguages={availableLanguages} />
         </div>
 
         <div className="mt-4">
