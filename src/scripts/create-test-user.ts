@@ -9,7 +9,11 @@
  * must be run with `--env-file=.env.local`.
  *
  * Safe to re-run: if the user already exists, it's looked up instead of
- * re-created, and the profile row is upserted either way.
+ * re-created, and the profile row is upserted either way. The password is
+ * also force-reset to TEST_PASSWORD on every run (not just at creation) —
+ * without that, a previous run's `createUser` failing after a partial
+ * password change, or a manual edit in the Supabase dashboard, would leave
+ * this script reporting "safe" credentials that no longer actually work.
  *
  * This is a throwaway local/dev convenience account, not a real customer —
  * don't run this against a Supabase project holding real user data.
@@ -67,6 +71,19 @@ async function main(): Promise<void> {
     }
     userId = existingId;
     console.log(`Found existing auth user: ${userId}`);
+
+    // createUser() above never ran for this branch, so TEST_PASSWORD was
+    // never actually applied — force it now so re-running this script is
+    // guaranteed to leave known-working credentials, not just an
+    // account that happens to exist under some unknown password.
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      password: TEST_PASSWORD,
+      email_confirm: true,
+    });
+    if (updateError) {
+      throw new Error(`Failed to reset password for existing user: ${updateError.message}`);
+    }
+    console.log('Password reset to TEST_PASSWORD.');
   } else {
     userId = created.user.id;
     console.log(`Created new auth user: ${userId}`);
