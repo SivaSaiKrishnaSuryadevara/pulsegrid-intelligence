@@ -18,6 +18,8 @@ supabase/.temp
 # Editor / OS
 .DS_Store
 *.pem
+*.swp
+*.swo
 
 # Logs
 npm-debug.log*
