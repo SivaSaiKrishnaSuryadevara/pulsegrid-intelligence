@@ -50,6 +50,20 @@ const BLACKOUT_WINDOW_DAYS = 60;
 const BATCH_CHUNK_SIZE = 500;
 const WRITE_CONCURRENCY = 10;
 
+/**
+ * Verified-bar floor for the discovery pipeline. Below this, a scraped
+ * profile reads as a personal/inactive account rather than a working
+ * creator — discovery runs against seed lists regularly turn up a handful
+ * of these (a 0-follower private account, a scrape that timed out and came
+ * back with `followerCount: null`) and letting them through erodes trust
+ * in the whole catalog for a paying agency. 300 is set just below the
+ * smallest legitimate creator observed in production seed runs (404
+ * followers) so it only cuts the empty-shell profiles, not small-but-real
+ * accounts. Seed scripts always pass five- and six-figure follower counts,
+ * so this only bites on the live Apify discovery path.
+ */
+const MIN_FOLLOWER_COUNT_FOR_INGEST = 300;
+
 // =====================================================================================
 // Worker-local input/output types
 // =====================================================================================
@@ -701,6 +715,11 @@ export class InstagramIngestWorker {
     }
     if (payload.entityType != null && !ENTITY_TYPES.includes(payload.entityType)) {
       problems.push(`entityType "${String(payload.entityType)}" is not a recognized entity_type`);
+    }
+    if (payload.followerCount == null || payload.followerCount < MIN_FOLLOWER_COUNT_FOR_INGEST) {
+      problems.push(
+        `followerCount must be at least ${MIN_FOLLOWER_COUNT_FOR_INGEST} (got ${payload.followerCount ?? 'null'}) — below PulseGrid's verified-creator bar`
+      );
     }
     if (payload.engagementRate != null && (payload.engagementRate < 0 || payload.engagementRate > 100)) {
       problems.push('engagementRate must be between 0 and 100');
