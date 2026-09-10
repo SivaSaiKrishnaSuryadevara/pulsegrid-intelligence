@@ -193,6 +193,8 @@ export interface CreatorProfile {
   directBookingPhone: string | null;
   /** Public link-in-bio URL — unlike the two fields above, not unlock-gated (see discover/queries.ts). */
   publicLinkUrl: string | null;
+  /** Raw scraped bio text — used for Discover's quick-search substring match; not otherwise rendered. */
+  bio: string | null;
   /** 0–100 composite score reflecting how reliably outreach reaches the creator. */
   deliverabilityScore: number | null;
   isVerified: boolean;

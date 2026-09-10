@@ -185,6 +185,8 @@ interface CreatorUpsertRow {
    * visible to anyone on the creator's actual Instagram profile.
    */
   public_link_url: string | null;
+  /** Raw bio text — powers Discover's quick-search substring match, not otherwise rendered. */
+  bio: string | null;
   is_verified: boolean;
   last_refreshed_at: string;
   deliverability_score?: number;
@@ -822,6 +824,7 @@ export class InstagramIngestWorker {
       // "this is my official link" signal) over a link-hub pattern merely
       // found inside the bio text.
       public_link_url: payload.externalUrl?.trim() || parsedBio.linkHub?.url || null,
+      bio: payload.bio || null,
       is_verified: payload.isVerified ?? false,
       last_refreshed_at: new Date().toISOString(),
     };

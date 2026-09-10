@@ -14,7 +14,7 @@ import {
 export function matchesFilters(creator: CreatorCardModel, criteria: FilterCriteria): boolean {
   const query = criteria.searchQuery.trim().toLowerCase();
   if (query) {
-    const haystack = `${creator.displayName} ${creator.handle}`.toLowerCase();
+    const haystack = `${creator.displayName} ${creator.handle} ${creator.bio ?? ''}`.toLowerCase();
     if (!haystack.includes(query)) {
       return false;
     }

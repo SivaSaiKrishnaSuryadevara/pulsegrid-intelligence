@@ -266,7 +266,24 @@ export default function DiscoverPage() {
         <EntityTypeTabs
           counts={entityTypeCounts}
           value={filters.selectedEntityTypes}
-          onChange={(selectedEntityTypes) => setFilters({ ...filters, selectedEntityTypes })}
+          onChange={(selectedEntityTypes) =>
+            setFilters((prev) => ({
+              ...prev,
+              selectedEntityTypes,
+              // secondaryLanguages/entityDetailFilters are each scoped to
+              // whichever entity type is selected (it's DJ genre tags vs.
+              // dialects depending on isDjSelected in FilterStrip; troupe
+              // size, venue scale, and AV spec each only apply to one
+              // type). Carrying a stale value across an entity-type change
+              // either silently zeroes every result — e.g. a leftover DJ
+              // genre tag never matches any real creator's
+              // secondaryLanguages once DJ mode turns off — or leaves an
+              // "active filter" badge stuck on with no visible control to
+              // clear it once that type's chip disappears from the strip.
+              secondaryLanguages: [],
+              entityDetailFilters: { minTroupeSize: null, venueScaleBracket: null, avSpecIncluded: null },
+            }))
+          }
         />
 
         <div className="mt-4">
