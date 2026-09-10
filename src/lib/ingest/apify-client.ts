@@ -108,3 +108,69 @@ export async function fetchApifyDatasetItems(datasetId: string, apiToken: string
 
   return items;
 }
+
+const RUN_POLL_INTERVAL_MS = 5_000;
+const RUN_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
+/**
+ * Terminal per Apify's documented run lifecycle (READY/RUNNING/ABORTING/
+ * TIMING-OUT are all transitional and keep polling).
+ */
+const FAILURE_TERMINAL_STATUSES = new Set(['FAILED', 'ABORTED', 'TIMED-OUT']);
+
+/**
+ * Fetches the current status of an already-started actor run.
+ *
+ * Docs: https://docs.apify.com/api/v2/act-run-get
+ */
+export async function getApifyRunStatus(runId: string, apiToken: string): Promise<{ status: string; datasetId: string }> {
+  const response = await fetch(`${APIFY_API_BASE}/actor-runs/${encodeURIComponent(runId)}`, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new ApifyRunStartError(
+      `Failed to fetch status for run ${runId} (${response.status}): ${body || response.statusText}`
+    );
+  }
+
+  const data = (await response.json()) as { data?: { status?: string; defaultDatasetId?: string } };
+  const status = data.data?.status;
+  const datasetId = data.data?.defaultDatasetId;
+  if (!status || !datasetId) {
+    throw new ApifyRunStartError(`Unexpected response fetching status for run ${runId}: missing status/defaultDatasetId.`);
+  }
+  return { status, datasetId };
+}
+
+/**
+ * Polls a run until it reaches SUCCEEDED or a failure/timeout terminal
+ * state, returning the run's dataset id on success. Safe to call from a
+ * long-lived CLI script only — a serverless request handler should use an
+ * ad-hoc webhook (see `startApifyActorRun`'s `webhooks` param) instead of
+ * blocking on a poll loop inside a time-limited invocation.
+ */
+export async function waitForApifyRunToFinish(
+  runId: string,
+  apiToken: string,
+  opts: { pollIntervalMs?: number; timeoutMs?: number; onPoll?: (status: string) => void } = {}
+): Promise<string> {
+  const pollIntervalMs = opts.pollIntervalMs ?? RUN_POLL_INTERVAL_MS;
+  const timeoutMs = opts.timeoutMs ?? RUN_POLL_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
+
+  for (;;) {
+    const { status, datasetId } = await getApifyRunStatus(runId, apiToken);
+    opts.onPoll?.(status);
+
+    if (status === 'SUCCEEDED') return datasetId;
+    if (FAILURE_TERMINAL_STATUSES.has(status)) {
+      throw new ApifyRunStartError(`Apify run ${runId} finished with status ${status}.`);
+    }
+    if (Date.now() >= deadline) {
+      throw new ApifyRunStartError(`Timed out waiting for Apify run ${runId} to finish (last status: ${status}).`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+}

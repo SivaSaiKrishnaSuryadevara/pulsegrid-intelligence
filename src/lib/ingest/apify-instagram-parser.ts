@@ -450,3 +450,92 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
 
   return { ok: true, payload };
 }
+
+// =====================================================================================
+// Refresh parse — telemetry only, classification pinned
+// =====================================================================================
+
+export interface ExistingClassification {
+  entityType: EntityType;
+  entityDetails: EntityDetails;
+  primaryMetro: MetroHub;
+  primaryNiche: PrimaryNiche;
+  secondaryLanguages: string[];
+  estMinimumRateUsd: number | null;
+  estMaximumRateUsd: number | null;
+}
+
+/**
+ * Same raw-item -> payload translation as `parseApifyProfileItem`, but for
+ * re-scraping a handle already on file: every classification field
+ * (entity type/details beyond mediaProofs, metro, niche, languages, rate
+ * range) is pinned to `existing` instead of re-derived from the fresh bio.
+ * Some of those fields were originally set by the LLM webhook path
+ * (`/api/webhooks/apify-discovery`), which is strictly better judgment than
+ * this module's bio-keyword heuristic — re-running the heuristic on every
+ * refresh would risk silently downgrading a classification the smarter
+ * pass already got right. Only genuinely time-sensitive fields (follower
+ * count, bio, avatar, engagement, recent posts/availability, media proofs)
+ * come from the new scrape.
+ */
+export function parseApifyProfileItemForRefresh(
+  raw: RawApifyProfileItem,
+  worker: InstagramIngestWorker,
+  existing: ExistingClassification
+): ParsedApifyItem {
+  const rawUsername = raw?.username;
+  if (!rawUsername || typeof rawUsername !== 'string' || !rawUsername.trim()) {
+    return { ok: false, identifier: '(missing username)', error: 'username is required' };
+  }
+  const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  const bio = raw.biography ?? '';
+  const recentPosts = toRecentPosts(raw.latestPosts);
+  const followerCount = raw.followersCount ?? 0;
+
+  let recentSponsorshipCount14d = 0;
+  for (const post of recentPosts) {
+    if (daysSince(post.postDate) > 14) continue;
+    try {
+      if (worker.detectBrandDisclosures(post.caption, post.taggedAccounts).isCommercial) {
+        recentSponsorshipCount14d += 1;
+      }
+    } catch {
+      // Malformed single post — don't let it block the whole item.
+    }
+  }
+  const lastPostDate = recentPosts.map((p) => p.postDate).sort().at(-1);
+
+  const entityDetails: EntityDetails = {
+    ...existing.entityDetails,
+    mediaProofs: extractMediaProofs(raw.latestPosts),
+  };
+  if (entityDetails.kind === 'local_dj') {
+    entityDetails.genreTags = inferGenreTags(`${raw.fullName ?? ''}\n${bio}`);
+  }
+
+  const engagementRate = computeEngagementRate(raw.latestPosts, followerCount);
+
+  const payload: ScrapedCreatorPayload = {
+    handle,
+    displayName: raw.fullName?.trim() || handle,
+    avatarUrl: raw.profilePicUrlHD || raw.profilePicUrl || null,
+    bio,
+    externalUrl: raw.externalUrl ?? null,
+    entityType: existing.entityType,
+    entityDetails,
+    secondaryLanguages: existing.secondaryLanguages,
+    primaryMetro: existing.primaryMetro,
+    primaryNiche: existing.primaryNiche,
+    followerCount,
+    engagementRate,
+    avgReelViews: computeAvgReelViews(raw.latestPosts),
+    estMinimumRateUsd: existing.estMinimumRateUsd,
+    estMaximumRateUsd: existing.estMaximumRateUsd,
+    isVerified: raw.verified ?? false,
+    recentPosts,
+    daysSinceLastPost: lastPostDate ? daysSince(lastPostDate) : 9999,
+    recentSponsorshipCount14d,
+  };
+
+  return { ok: true, payload };
+}
