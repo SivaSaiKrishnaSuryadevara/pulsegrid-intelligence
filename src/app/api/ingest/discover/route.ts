@@ -299,32 +299,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return errorResponse(500, 'CONFIGURATION_ERROR', 'Missing APIFY_WEBHOOK_SECRET environment variable.');
   }
 
+  // Dispatched in parallel, not one-metro-at-a-time — sequential awaits
+  // here multiply this route's response latency by the number of metro
+  // groups in the batch, which is exactly what pushed a real production
+  // run past Apify's webhook retry timeout (doNotRetry: false on the
+  // persistent webhook) and caused it to redeliver, duplicating the
+  // enrichment run for whichever metros hadn't finished dispatching yet
+  // (confirmed: Austin and DFW both got double-dispatched in a live run
+  // before this fix). The dedup-against-existing-handles lookup earlier
+  // in this route still makes a genuine retry safe either way — this is
+  // about not wasting Apify usage on redundant scrapes, not correctness.
+  const metroEntries = Array.from(newHandlesByMetro.entries());
+  const dispatchResults = await Promise.allSettled(
+    metroEntries.map(([metro, handles]) =>
+      startApifyActorRun(PROFILE_SCRAPER_ACTOR_ID, { usernames: handles }, apiToken, [
+        {
+          eventTypes: ['ACTOR.RUN.SUCCEEDED'],
+          // strict=1: these handles are unvetted (anyone who used a tracked
+          // hashtag once), so a bio with no event-industry signal should be
+          // skipped rather than defaulted into defaultTypeParam — see
+          // requireBioSignal in apify-instagram-parser.ts.
+          requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}&strict=1`,
+          headersTemplate: JSON.stringify({ 'x-apify-secret': secret }),
+        },
+      ])
+    )
+  );
+
   const enrichmentRuns: { metro: MetroHub; handleCount: number; runId: string }[] = [];
   const enrichmentErrors: { metro: MetroHub; error: string }[] = [];
 
-  for (const [metro, handles] of newHandlesByMetro.entries()) {
-    try {
-      const run = await startApifyActorRun(
-        PROFILE_SCRAPER_ACTOR_ID,
-        { usernames: handles },
-        apiToken,
-        [
-          {
-            eventTypes: ['ACTOR.RUN.SUCCEEDED'],
-            // strict=1: these handles are unvetted (anyone who used a tracked
-            // hashtag once), so a bio with no event-industry signal should be
-            // skipped rather than defaulted into defaultTypeParam — see
-            // requireBioSignal in apify-instagram-parser.ts.
-            requestUrl: `${origin}/api/ingest?metro=${encodeURIComponent(metro)}&defaultType=${encodeURIComponent(defaultTypeParam)}&strict=1`,
-            headersTemplate: JSON.stringify({ 'x-apify-secret': secret }),
-          },
-        ]
-      );
-      enrichmentRuns.push({ metro, handleCount: handles.length, runId: run.runId });
-    } catch (err) {
-      enrichmentErrors.push({ metro, error: errorMessage(err) });
+  dispatchResults.forEach((result, index) => {
+    const entry = metroEntries[index];
+    if (!entry) return;
+    const [metro, handles] = entry;
+    if (result.status === 'fulfilled') {
+      enrichmentRuns.push({ metro, handleCount: handles.length, runId: result.value.runId });
+    } else {
+      enrichmentErrors.push({ metro, error: errorMessage(result.reason) });
     }
-  }
+  });
 
   return NextResponse.json({
     datasetId,
