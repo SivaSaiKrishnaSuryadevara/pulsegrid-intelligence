@@ -31,20 +31,26 @@ const FallbackClassificationSchema = z.object({
     .enum(ENTITY_TYPES)
     .nullable()
     .describe(
-      'What kind of South Asian event-production entity this account is, if any — and ONLY if the ' +
-        'account itself is personally bookable/hireable for that role, not merely discussing or ' +
-        'covering it: solo_creator (an individual who personally creates and posts sponsored/branded ' +
-        'content — their bio says so, e.g. "content creator," "influencer," "brand partnerships"), ' +
-        'stage_emcee (an individual live mic host/anchor available to hire), dance_troupe (a specific ' +
-        'dance studio/academy/performance group/choreographer offering performances), local_dj (an ' +
-        'individual DJ/sound engineer offering their own DJ services), or event_planner (a specific ' +
-        'decorator/coordinator/production company offering event-planning services). null if this is NOT ' +
-        'an event professional personally offering a bookable service — most accounts you will see are ' +
-        'genuinely unrelated (a restaurant, retail shop, personal account, unrelated business) or, ' +
-        'importantly, a community page / local media outlet / city guide / classifieds or listings ' +
-        'platform that talks ABOUT events, restaurants, or creators without being one itself (e.g. a ' +
-        '"your guide to X" or "discover local Y" account) — those are never solo_creator just because ' +
-        'they post content; return null for those rather than forcing a guess.'
+      'What kind of South Asian/Desi event-production entity this account is, if any. TWO conditions ' +
+        'must BOTH hold — this is an AND, not an either/or — or the answer is null:\n' +
+        '(1) Role: the account itself is personally bookable/hireable for the role, not merely ' +
+        'discussing or covering it: solo_creator (an individual who personally creates and posts ' +
+        'sponsored/branded content — their bio says so, e.g. "content creator," "influencer," "brand ' +
+        'partnerships"), stage_emcee (an individual live mic host/anchor available to hire), dance_troupe ' +
+        '(a specific dance studio/academy/performance group/choreographer offering performances), ' +
+        'local_dj (an individual DJ/sound engineer offering their own DJ services), or event_planner (a ' +
+        'specific decorator/coordinator/production company offering event-planning services).\n' +
+        '(2) Cultural relevance (REQUIRED, not a bonus point): clear South Asian/Desi diaspora context in ' +
+        'the bio, stated performance niche, or visible content — e.g. Bollywood, Tollywood, Bhangra, ' +
+        'Punjabi, Garba, Sangeet, Desi, South Asian weddings, diaspora culture, or a regional Indian/South ' +
+        'Asian language (Hindi, Telugu, Tamil, Gujarati, Urdu, Punjabi, Malayalam, Kannada, Marathi, ' +
+        'Bengali). A mainstream/generic DJ, emcee, wedding planner, or dance instructor with NO such ' +
+        'signal is null even though they are a real, legitimate event professional — they are simply not ' +
+        'this directory\'s niche.\n' +
+        'null covers all of: genuinely unrelated accounts (a restaurant, retail shop, personal account, ' +
+        'unrelated business), a community page / local media outlet / city guide / classifieds platform ' +
+        'that talks ABOUT events without being one itself, AND a real event professional who fails the ' +
+        'cultural-relevance test. Return null rather than forcing a guess on any of these.'
     ),
 });
 
@@ -61,12 +67,21 @@ export async function classifyEntityTypeFallback(displayName: string, bio: strin
       system:
         'You classify Instagram accounts for a South Asian (Desi) event-production directory covering ' +
         'DJs, dance troupes, stage emcees, event planners, and content creators. A keyword-based first ' +
-        'pass already rejected this account as having no obvious signal — you are the harder-case ' +
-        'fallback for unusual phrasing, not a second chance to be generous. Most accounts you see ' +
-        'genuinely are NOT event professionals; return null for those rather than forcing a guess. The ' +
-        'bar is "personally bookable for this role," not "posts content related to this topic" — a local ' +
-        'events guide, community page, or aggregator account is not a solo_creator just because it posts ' +
-        'about events and culture; it has to be an individual/business personally offering that service.',
+        'pass already rejected this account as having no obvious signal on EITHER of the two gates below ' +
+        '— you are the harder-case fallback for unusual phrasing, not a second chance to be generous. ' +
+        'Most accounts you see genuinely fail one or both gates; return null for those rather than ' +
+        'forcing a guess.\n\n' +
+        'Gate 1 — role: the bar is "personally bookable for this role," not "posts content related to ' +
+        'this topic" — a local events guide, community page, or aggregator account is not a solo_creator ' +
+        'just because it posts about events and culture; it has to be an individual/business personally ' +
+        'offering that service.\n\n' +
+        'Gate 2 — South Asian/Desi cultural relevance, REQUIRED, independent of gate 1: this directory ' +
+        'exists for the South Asian diaspora market specifically, not the general wedding/nightlife ' +
+        'industry. A mainstream American wedding DJ, a general bar/trivia emcee, or a generic event ' +
+        'planner with zero Bollywood/Tollywood/Bhangra/Punjabi/Garba/Sangeet/Desi/South Asian-wedding/ ' +
+        'diaspora/regional-Indian-language signal in their bio or stated niche is null — being a real, ' +
+        'legitimate event professional is not enough on its own. Both gates must pass for a non-null ' +
+        'answer.',
       messages: [{ role: 'user', content: `Display name: ${displayName}\nBio: ${bio}` }],
       output_config: { format: zodOutputFormat(FallbackClassificationSchema) },
     });

@@ -23,7 +23,7 @@ export function EntityTypeTabs({ counts, value, onChange }: EntityTypeTabsProps)
   const isAllActive = value.length === 0;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+    <div className="scrollbar-none flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
       <TabButton
         active={isAllActive}
         label={`All Production (${counts.all ?? 0})`}

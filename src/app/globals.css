@@ -15,6 +15,17 @@ html {
   color-scheme: light;
 }
 
+/* Horizontally-scrollable chip rows (entity-type tabs, filter strip) — the
+   scroll affordance itself is the mobile pattern, a visible scrollbar isn't
+   needed to discover it (swipe is the obvious gesture on a row of chips). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 body {
   background-color: #f8f9fa;
   color: #18181b; /* zinc-900 */

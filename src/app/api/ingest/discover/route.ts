@@ -73,37 +73,50 @@ const MAX_DISCOVERED_HANDLES_PER_METRO = 15;
  * to the schedule but not yet added here) falls back to this route's own
  * `?metro=` query param default.
  */
+/**
+ * Replaced the original generic tag set (dfwfoodie, austinevents,
+ * houstonevents, dallasblogger, ...) after confirming in production that
+ * it was the actual source of the niche dilution: a bar-trivia host and a
+ * dance-fitness account both passed entity-type keyword matching with
+ * zero South Asian/Desi relevance, because the HASHTAGS themselves were
+ * generic local/foodie/events tags, not diaspora-specific ones. Every tag
+ * below is high-signal-diaspora by construction; the cultural-relevance
+ * gate in apify-instagram-parser.ts (hasCulturalSignal) is the second,
+ * independent layer that catches anything that still slips through.
+ *
+ * National/touring diaspora tags (desievents, southasianweddings,
+ * desisinusa, browngirlmag) aren't region-specific enough to map to one
+ * metro — they're intentionally left OUT of this dictionary and fall back
+ * to this route's own ?metro= default, same as before; a profile whose
+ * bio names a specific city still gets corrected by inferLocality
+ * regardless of which metro this fallback guesses.
+ */
 const HASHTAG_TO_METRO: Record<string, MetroHub> = {
   // DFW
-  dfwfoodie: 'DFW_TEXAS',
+  dallasdesi: 'DFW_TEXAS',
+  dfwdesi: 'DFW_TEXAS',
+  dallasindianweddings: 'DFW_TEXAS',
   dallasdesievents: 'DFW_TEXAS',
-  dfwinfluencer: 'DFW_TEXAS',
-  dallasblogger: 'DFW_TEXAS',
+  texastelugu: 'DFW_TEXAS',
   // DMV
-  dmvevents: 'DMV_NOVA',
-  novaweddings: 'DMV_NOVA',
   dmvdesi: 'DMV_NOVA',
-  dcweddings: 'DMV_NOVA',
-  dmvcreators: 'DMV_NOVA',
-  dcevents: 'DMV_NOVA',
+  novadesi: 'DMV_NOVA',
+  dcweddingsdesi: 'DMV_NOVA',
+  dmvbhangra: 'DMV_NOVA',
+  dmveventsdesi: 'DMV_NOVA',
   // Austin
   austindesi: 'AUSTIN_TX',
-  austinevents: 'AUSTIN_TX',
-  atxfoodie: 'AUSTIN_TX',
-  roundrockevents: 'AUSTIN_TX',
-  austinweddingplanner: 'AUSTIN_TX',
+  atxdesi: 'AUSTIN_TX',
+  austinindianweddings: 'AUSTIN_TX',
   // Houston
   houstondesi: 'HOUSTON_TX',
-  houstonevents: 'HOUSTON_TX',
-  houstonfoodie: 'HOUSTON_TX',
+  houstondesievents: 'HOUSTON_TX',
+  houstonindianweddings: 'HOUSTON_TX',
   // Carolinas
   charlottedesi: 'CLT_CAROLINAS',
-  cltevents: 'CLT_CAROLINAS',
-  charlotteweddings: 'CLT_CAROLINAS',
   raleighdesi: 'CLT_CAROLINAS',
-  caryevents: 'CLT_CAROLINAS',
-  morrisvilledesi: 'CLT_CAROLINAS',
-  cltfoodie: 'CLT_CAROLINAS',
+  carydesi: 'CLT_CAROLINAS',
+  carolinadesi: 'CLT_CAROLINAS',
 };
 
 interface ApifyRunFinishedPayload {

@@ -95,7 +95,7 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+    <div className="scrollbar-none flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
       <div className="relative shrink-0">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
         <input

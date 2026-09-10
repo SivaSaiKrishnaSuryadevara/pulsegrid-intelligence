@@ -189,6 +189,60 @@ export function inferEntityType(rawSignalText: string): EntityType | null {
   return bestType;
 }
 
+// =====================================================================================
+// Cultural-relevance gate (South Asian / Desi) — required, not a bonus signal
+// =====================================================================================
+
+/**
+ * PulseGrid is a South Asian/Desi event-production directory specifically —
+ * `inferEntityType` above only tests "is this person a DJ/emcee/planner/
+ * dance troupe," which any wedding-industry professional in the country can
+ * match regardless of cultural relevance. Confirmed in production: a Dallas
+ * bar-trivia host ("Live Stage Host" bio) passed the stage_emcee rule on
+ * the word "host" alone, with nothing Desi about the account at all. This
+ * is the second, independent gate that actually enforces the directory's
+ * niche — both need to pass, not either/or.
+ */
+const CULTURAL_SIGNAL_PATTERNS: RegExp[] = [
+  /\bdesi\b/i,
+  /\bsouth\s*asian\b/i,
+  /\bbollywood\b/i,
+  /\btollywood\b/i,
+  /\bkollywood\b/i,
+  /\bbhangra\b/i,
+  /\bpunjabi\b/i,
+  /\bgarba\b/i,
+  /\braas\b/i,
+  /\bsangeet\b/i,
+  /\bmehndi\b/i,
+  /\bhaldi\b/i,
+  /\bbaraat\b/i,
+  /\bqawwali\b/i,
+  /\bsufi\b/i,
+  /\bbharatanatyam\b/i,
+  /\bkathak\b/i,
+  /\bbollywood\b/i,
+  /\bdiaspora\b/i,
+  /\bindian\s+wedding\b/i,
+  // Regional Indian/South Asian languages — same list `inferSecondaryLanguages`
+  // scans for, minus English (not itself a cultural signal).
+  /\bhindi\b/i,
+  /\btelugu\b/i,
+  /\btamil\b/i,
+  /\bgujarati\b/i,
+  /\burdu\b/i,
+  /\bmalayalam\b/i,
+  /\bkannada\b/i,
+  /\bmarathi\b/i,
+  /\bbengali\b/i,
+];
+
+/** NFKD-normalizes first — see inferEntityType for why (stylized bio fonts). */
+export function hasCulturalSignal(rawSignalText: string): boolean {
+  const signalText = rawSignalText.normalize('NFKD');
+  return CULTURAL_SIGNAL_PATTERNS.some((pattern) => pattern.test(signalText));
+}
+
 /** No separate niche heuristic — derived from the entity type already inferred from the same bio. */
 const ENTITY_TYPE_TO_DEFAULT_NICHE: Record<EntityType, PrimaryNiche> = {
   local_dj: 'NIGHTLIFE',
@@ -528,8 +582,19 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
   const bio = raw.biography ?? '';
   const signalText = `${raw.fullName ?? ''}\n${bio}`;
   const inferredType = inferEntityType(signalText);
-  if (inferredType === null && opts.requireBioSignal) {
-    return { ok: false, identifier: handle, error: 'no event-industry signal found in bio — skipped' };
+  if (opts.requireBioSignal) {
+    if (inferredType === null) {
+      return { ok: false, identifier: handle, error: 'no event-industry signal found in bio — skipped' };
+    }
+    // Required gate, not a bonus signal — see the header note on
+    // hasCulturalSignal. A legitimate DJ/emcee/planner/dance troupe with
+    // zero South Asian/Desi cultural signal is exactly the "dilution"
+    // this stops; the LLM fallback this routes to (classifyEntityTypeFallback
+    // in llm-classifier.ts) enforces the same requirement for the harder
+    // cases this regex-based check can't recognize.
+    if (!hasCulturalSignal(signalText)) {
+      return { ok: false, identifier: handle, error: 'no South Asian/Desi cultural signal found in bio — skipped' };
+    }
   }
   const entityType = inferredType ?? opts.defaultType;
   const recentPosts = toRecentPosts(raw.latestPosts);
