@@ -1,8 +1,23 @@
 import type { Metadata } from 'next';
+import { Playfair_Display } from 'next/font/google';
 
 import { SITE_NAME, SITE_URL } from '@/lib/pseo/directory-config';
 
 import './globals.css';
+
+/**
+ * Self-hosted via next/font (no runtime Google Fonts request, no layout
+ * shift) — exposed as the --font-playfair CSS variable, which globals.css
+ * maps onto Tailwind's `font-serif` utility so every editorial heading
+ * just uses `font-serif` rather than a bespoke class name.
+ */
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
 
 /**
  * `metadataBase` is evaluated at module scope during the build, so a
@@ -34,7 +49,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={playfairDisplay.variable}>
       <body>{children}</body>
     </html>
   );

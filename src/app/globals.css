@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+/* Playfair Display, loaded via next/font in layout.tsx (--font-playfair) —
+   mapped onto Tailwind's own font-serif token so editorial headings just
+   use `font-serif` rather than a one-off class. `inline` keeps this a
+   runtime var() reference instead of trying to resolve it at build time,
+   since next/font injects the actual value on <html> at request time. */
+@theme inline {
+  --font-serif: var(--font-playfair), Georgia, 'Times New Roman', serif;
+}
+
 /*
  * "Event Production OS" palette — Modash-style editorial light mode: a
  * subtle off-white canvas (`#F8F9FA`) with pure white card/drawer surfaces,
@@ -23,6 +32,25 @@ html {
   -ms-overflow-style: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Continuous horizontal ticker for the landing hero's coverage strip — the
+   track is rendered twice back-to-back and slides exactly -50%, so the
+   loop is seamless. Paused for reduced-motion users, who still see the
+   (duplicated, so slightly redundant but harmless) content statically. */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@utility animate-marquee {
+  animation: marquee-scroll 28s linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }
 
