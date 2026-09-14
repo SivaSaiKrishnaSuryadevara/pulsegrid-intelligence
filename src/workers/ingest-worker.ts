@@ -282,7 +282,7 @@ const FTC_DISCLOSURE_PATTERNS: { type: DisclosureType; re: RegExp }[] = [
  * from an ordinarily-tagged creator peer. Keyed by normalized (lowercase,
  * no leading `@`) Instagram handle.
  */
-const VERTICAL_BRAND_DICTIONARY: Record<string, { brandName: string; categorySlug: string }> = {
+export const VERTICAL_BRAND_DICTIONARY: Record<string, { brandName: string; categorySlug: string }> = {
   davidsbridal: { brandName: "David's Bridal", categorySlug: 'luxury-bridal' },
   zolaweddings: { brandName: 'Zola', categorySlug: 'luxury-bridal' },
   theknot: { brandName: 'The Knot', categorySlug: 'luxury-bridal' },
@@ -319,7 +319,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function normalizeHandle(handle: string): string {
+export function normalizeHandle(handle: string): string {
   return handle.trim().replace(/^@/, '').toLowerCase();
 }
 
