@@ -61,7 +61,17 @@ import { getServiceRoleClient } from '@/lib/supabase/service';
 import { ENTITY_TYPES, type EntityType, type MetroHub } from '@/types/creator';
 
 const PROFILE_SCRAPER_ACTOR_ID = 'apify/instagram-profile-scraper';
-const MAX_DISCOVERED_HANDLES_PER_METRO = 15;
+/**
+ * Raised 15 -> 40 for the 2026-09-14 catalog-bootstrap push (~80 ->
+ * 250+ target across the 5 hubs). At 15, a single run's hard ceiling was
+ * 5 metros x 15 = 75 new creators regardless of how many hashtags fed it
+ * — the actual bottleneck for reaching that target quickly, independent
+ * of the hashtag/resultsLimit expansion also done in this pass. Left
+ * raised as the new standing default rather than reverted after one run;
+ * dial back down if weekly Apify cost becomes a concern once the catalog
+ * is closer to target size.
+ */
+const MAX_DISCOVERED_HANDLES_PER_METRO = 40;
 
 /**
  * Tracked regional hashtags -> the metro they mean. Kept here (not in
@@ -72,8 +82,7 @@ const MAX_DISCOVERED_HANDLES_PER_METRO = 15;
  * A hashtag not listed here (generic tags like #desisinusa, or one added
  * to the schedule but not yet added here) falls back to this route's own
  * `?metro=` query param default.
- */
-/**
+ *
  * Replaced the original generic tag set (dfwfoodie, austinevents,
  * houstonevents, dallasblogger, ...) after confirming in production that
  * it was the actual source of the niche dilution: a bar-trivia host and a
@@ -98,25 +107,39 @@ const HASHTAG_TO_METRO: Record<string, MetroHub> = {
   dallasindianweddings: 'DFW_TEXAS',
   dallasdesievents: 'DFW_TEXAS',
   texastelugu: 'DFW_TEXAS',
+  dfwindiandjs: 'DFW_TEXAS',
+  friscodesi: 'DFW_TEXAS',
+  planodesi: 'DFW_TEXAS',
   // DMV
   dmvdesi: 'DMV_NOVA',
   novadesi: 'DMV_NOVA',
   dcweddingsdesi: 'DMV_NOVA',
   dmvbhangra: 'DMV_NOVA',
   dmveventsdesi: 'DMV_NOVA',
+  novadesievents: 'DMV_NOVA',
+  dmvindiandj: 'DMV_NOVA',
+  dcbhangra: 'DMV_NOVA',
+  fairfaxdesi: 'DMV_NOVA',
   // Austin
   austindesi: 'AUSTIN_TX',
   atxdesi: 'AUSTIN_TX',
   austinindianweddings: 'AUSTIN_TX',
+  austindesievents: 'AUSTIN_TX',
+  atxindiandjs: 'AUSTIN_TX',
   // Houston
   houstondesi: 'HOUSTON_TX',
   houstondesievents: 'HOUSTON_TX',
   houstonindianweddings: 'HOUSTON_TX',
+  sugarlanddesi: 'HOUSTON_TX',
+  houstonbhangra: 'HOUSTON_TX',
   // Carolinas
   charlottedesi: 'CLT_CAROLINAS',
   raleighdesi: 'CLT_CAROLINAS',
   carydesi: 'CLT_CAROLINAS',
   carolinadesi: 'CLT_CAROLINAS',
+  charlottedesievents: 'CLT_CAROLINAS',
+  carydesievents: 'CLT_CAROLINAS',
+  raleighindiandjs: 'CLT_CAROLINAS',
 };
 
 interface ApifyRunFinishedPayload {
