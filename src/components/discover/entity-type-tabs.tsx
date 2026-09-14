@@ -50,8 +50,8 @@ function TabButton({ active, label, onClick }: { active: boolean; label: string;
       className={cn(
         'shrink-0 whitespace-nowrap rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all',
         active
-          ? 'border-zinc-200 bg-white text-zinc-900 shadow-sm'
-          : 'border-transparent text-zinc-500 hover:border-zinc-200 hover:text-zinc-700'
+          ? 'border-[#BA5D2C]/30 bg-[#EDE7DC] text-[#1D1714] shadow-sm'
+          : 'border-transparent text-[#7A6E65] hover:border-[#DDD5C7] hover:text-[#1D1714]'
       )}
     >
       {label}

@@ -13,7 +13,8 @@
     "seed:expanded": "tsx --env-file=.env.local src/scripts/seed-expanded-creators.ts",
     "ingest:apify": "tsx --env-file=.env.local src/scripts/ingest-apify.ts",
     "refresh:stale": "tsx --env-file=.env.local src/scripts/refresh-stale-creators.ts",
-    "discover:collaborators": "tsx --env-file=.env.local src/scripts/discover-collaborators.ts"
+    "discover:collaborators": "tsx --env-file=.env.local src/scripts/discover-collaborators.ts",
+    "crawl:network": "tsx --env-file=.env.local src/scripts/crawl-network-graph.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

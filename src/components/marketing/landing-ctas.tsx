@@ -6,18 +6,18 @@ import { AgencyPassModal } from '@/components/growth/agency-pass-modal';
 
 export interface LandingCtasProps {
   size?: 'sm' | 'md' | 'lg';
+  /** Hero renders these left-aligned inside its own flex row; every other call site centers them. */
+  align?: 'center' | 'start';
 }
 
 /**
- * "Inquire for Talent" (primary, champagne-gold fill — opens
- * AgencyPassModal, the same lead-capture flow /discover uses) +
- * "Explore Roster" (secondary ghost, -> /login, the actual gateway to
- * browsing the directory). One client component so the marketing page
- * itself can stay a server component. The whole page is now one
- * consistent obsidian canvas, so unlike the previous cream/dark-pine
- * split this needs no light/dark variant.
+ * "Access Talent Desk" (primary, solid raw-umber fill — opens
+ * AgencyPassModal, the same lead-capture flow /discover uses) + "Review
+ * Roster" (secondary stone-bordered ghost, -> /login, the actual gateway
+ * to browsing the directory). One client component so the marketing page
+ * itself can stay a server component.
  */
-export function LandingCtas({ size = 'md' }: LandingCtasProps) {
+export function LandingCtas({ size = 'md', align = 'center' }: LandingCtasProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const sizeClasses = {
@@ -28,19 +28,19 @@ export function LandingCtas({ size = 'md' }: LandingCtasProps) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div className={`flex flex-wrap items-center gap-3 ${align === 'center' ? 'justify-center' : 'justify-start'}`}>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className={`rounded-full bg-[#E5C378] font-semibold text-[#0B0F0E] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#EFD498] hover:shadow-md active:translate-y-0 ${sizeClasses}`}
+          className={`rounded-full bg-[#1D1714] font-semibold text-[#F7F4EE] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#322822] active:translate-y-0 ${sizeClasses}`}
         >
-          Inquire for Talent
+          Access Talent Desk
         </button>
         <a
           href="/login"
-          className={`rounded-full border border-stone-600/50 font-semibold text-stone-300 transition-all duration-200 hover:-translate-y-0.5 hover:border-stone-400 hover:text-white active:translate-y-0 ${sizeClasses}`}
+          className={`rounded-full border border-[#DDD5C7] font-semibold text-[#1D1714] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BA5D2C]/50 hover:text-[#BA5D2C] active:translate-y-0 ${sizeClasses}`}
         >
-          Explore Roster
+          Review Roster
         </a>
       </div>
       <AgencyPassModal open={modalOpen} onOpenChange={setModalOpen} trigger="manual" />

@@ -57,6 +57,8 @@ export interface RawApifyPost {
   playCount?: number | null;
   videoPlayCount?: number | null;
   taggedUsers?: { username?: string | null }[] | null;
+  /** Instagram "Collab" post co-authors — apify/instagram-profile-scraper's field for the other account(s) credited as a joint author of a Reel/carousel, distinct from taggedUsers (people tagged IN the media, not credited as producing it). */
+  coauthorProducers?: { username?: string | null }[] | null;
 }
 
 export interface RawApifyProfileItem {
@@ -260,6 +262,29 @@ const CULTURAL_SIGNAL_PATTERNS: RegExp[] = [
   /\blahore\b/i,
   /\bkarachi\b/i,
   /\bdhaka\b/i,
+  // Regional dialect colloquialisms (Telugu/Tamil/Malayalam + Hindi/Punjabi
+  // slang) — catches bios/handles that lean on community shorthand rather
+  // than a formal cultural-marker word from the lists above. Two of these
+  // carry elevated false-positive risk as ordinary English words, flagged
+  // here the same way SUBURB_TO_METRO already discloses its risky entries:
+  //  - "mast": also just the ordinary English word for a ship's/flag mast.
+  //  - "hungama": common as a bare loanword in unrelated Indian-restaurant/
+  //    entertainment-brand names, not always a personal cultural signal —
+  //    accepted anyway since a false positive here still requires an
+  //    otherwise-unrelated bio to contain this exact word, same tradeoff
+  //    already made for "nova"/"spring"/"triangle" below.
+  /\bammayilu\b/i,
+  /\babbayilu\b/i,
+  /\bkiraak\b/i,
+  /\bhungama\b/i,
+  /\bponnu\b/i,
+  /\bmachan\b/i,
+  /\bmallu\b/i,
+  /\brapchik\b/i,
+  /\btamasha\b/i,
+  /\bmast\b/i,
+  /\bgabru\b/i,
+  /\bmutiyar\b/i,
 ];
 
 /**
@@ -438,6 +463,7 @@ const SUBURB_TO_METRO: SuburbEntry[] = [
   { keyword: 'georgetown', metroHub: 'AUSTIN_TX', locality: 'Georgetown, TX' },
   { keyword: 'pflugerville', metroHub: 'AUSTIN_TX', locality: 'Pflugerville, TX' },
   { keyword: 'san marcos', metroHub: 'AUSTIN_TX', locality: 'San Marcos, TX' },
+  { keyword: 'liberty hill', metroHub: 'AUSTIN_TX', locality: 'Liberty Hill, TX' },
   { keyword: 'atx', metroHub: 'AUSTIN_TX', locality: null },
   // HOU
   { keyword: 'houston', metroHub: 'HOUSTON_TX', locality: 'Houston, TX' },

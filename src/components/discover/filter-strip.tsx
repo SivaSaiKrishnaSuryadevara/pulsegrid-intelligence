@@ -97,14 +97,14 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
   return (
     <div className="scrollbar-none flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
       <div className="relative shrink-0">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#7A6E65]" />
         <input
           id="discover-quick-search"
           type="text"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder="⌘K Quick search handles, dialects, metros, genres…"
-          className="w-64 rounded-xl border border-zinc-200 bg-white py-2 pl-8 pr-3 text-xs text-zinc-900 placeholder:text-zinc-500 focus:border-emerald-500 focus:outline-none"
+          className="w-64 rounded-xl border border-[#DDD5C7] bg-[#EDE7DC] py-2 pl-8 pr-3 text-xs text-[#1D1714] placeholder:text-[#7A6E65] focus:border-[#BA5D2C]/50 focus:outline-none"
         />
       </div>
 
@@ -124,7 +124,7 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
       <FilterChip label={isDjSelected ? '🗣️ Genre' : '🗣️ Dialect / Genre'} activeCount={value.secondaryLanguages.length}>
         <ChipList>
           {(isDjSelected ? DJ_GENRE_TAG_OPTIONS : availableLanguages).length === 0 && (
-            <p className="px-2.5 py-1.5 text-xs text-zinc-500">
+            <p className="px-2.5 py-1.5 text-xs text-[#7A6E65]">
               {isDjSelected ? 'No genre tags on file yet.' : 'No dialects on file yet.'}
             </p>
           )}
@@ -265,7 +265,7 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
           {AVAILABILITY_MODE_OPTIONS.map((option) => (
             <label
               key={option.value}
-              className="flex cursor-pointer items-start gap-2 rounded-lg border border-zinc-200 bg-white p-2.5 text-xs transition-all hover:border-emerald-500/50"
+              className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#DDD5C7] bg-[#F7F4EE] p-2.5 text-xs transition-all hover:border-[#BA5D2C]/40"
             >
               <input
                 type="radio"
@@ -273,25 +273,25 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
                 value={option.value}
                 checked={value.availabilityFilter === option.value}
                 onChange={() => onChange({ ...value, availabilityFilter: option.value })}
-                className="mt-0.5 h-3.5 w-3.5 accent-emerald-500"
+                className="mt-0.5 h-3.5 w-3.5 accent-[#BA5D2C]"
               />
               <span>
-                <span className="block font-medium text-zinc-800">{option.label}</span>
-                {option.helperText && <span className="mt-0.5 block text-[11px] text-zinc-500">{option.helperText}</span>}
+                <span className="block font-medium text-[#1D1714]">{option.label}</span>
+                {option.helperText && <span className="mt-0.5 block text-[11px] text-[#7A6E65]">{option.helperText}</span>}
               </span>
             </label>
           ))}
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-zinc-200 bg-white p-2.5 text-xs transition-all hover:border-emerald-500/50">
-            <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#DDD5C7] bg-[#F7F4EE] p-2.5 text-xs transition-all hover:border-[#BA5D2C]/40">
+            <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-700" />
             <span className="flex-1">
-              <span className="block font-medium text-zinc-800">Hide Active Conflicts</span>
-              <span className="mt-0.5 block text-[11px] text-zinc-500">Removes creators under a brand exclusivity hold.</span>
+              <span className="block font-medium text-[#1D1714]">Hide Active Conflicts</span>
+              <span className="mt-0.5 block text-[11px] text-[#7A6E65]">Removes creators under a brand exclusivity hold.</span>
             </span>
             <input
               type="checkbox"
               checked={value.hideConflicts}
               onChange={(event) => onChange({ ...value, hideConflicts: event.target.checked })}
-              className="mt-0.5 h-3.5 w-3.5 accent-emerald-500"
+              className="mt-0.5 h-3.5 w-3.5 accent-[#BA5D2C]"
             />
           </label>
         </div>
@@ -301,7 +301,7 @@ export function FilterStrip({ value, onChange, onReset, availableLanguages }: Fi
         type="button"
         onClick={onReset}
         disabled={activeFilterCount === 0}
-        className="ml-auto flex shrink-0 items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-500 transition-all hover:border-zinc-400 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+        className="ml-auto flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDD5C7] px-3 py-2 text-xs font-semibold text-[#7A6E65] transition-all hover:border-[#BA5D2C]/40 hover:text-[#1D1714] disabled:cursor-not-allowed disabled:opacity-40"
       >
         <RotateCcw className="h-3.5 w-3.5" />
         Reset All
@@ -323,13 +323,13 @@ function FilterChip({ label, activeCount, children }: { label: string; activeCou
           className={cn(
             'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all',
             activeCount > 0
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400'
+              ? 'border-[#BA5D2C]/30 bg-[#BA5D2C]/10 text-[#BA5D2C]'
+              : 'border-[#DDD5C7] bg-[#EDE7DC] text-[#1D1714] hover:border-[#BA5D2C]/30'
           )}
         >
           {label}
           {activeCount > 0 && (
-            <span className="rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">{activeCount}</span>
+            <span className="rounded-full bg-[#BA5D2C] px-1.5 text-[10px] font-bold text-[#F7F4EE]">{activeCount}</span>
           )}
           <ChevronDown className="h-3 w-3" />
         </button>
@@ -338,7 +338,7 @@ function FilterChip({ label, activeCount, children }: { label: string; activeCou
         <Popover.Content
           sideOffset={8}
           align="start"
-          className="z-50 max-h-[60vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95"
+          className="z-50 max-h-[60vh] overflow-y-auto rounded-2xl border border-[#DDD5C7] bg-[#F7F4EE] p-3 shadow-xl data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95"
         >
           {children}
         </Popover.Content>
@@ -359,11 +359,11 @@ function CheckOption({ label, checked, onToggle }: { label: string; checked: boo
       aria-pressed={checked}
       className={cn(
         'flex items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-all',
-        checked ? 'bg-emerald-50 text-emerald-700' : 'text-zinc-700 hover:bg-zinc-200'
+        checked ? 'bg-[#BA5D2C]/10 text-[#BA5D2C]' : 'text-[#1D1714] hover:bg-[#EDE7DC]'
       )}
     >
       {label}
-      {checked && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+      {checked && <span className="h-1.5 w-1.5 rounded-full bg-[#BA5D2C]" />}
     </button>
   );
 }
@@ -373,7 +373,7 @@ function EngagementRateSlider({ min, max, onChange }: { min: number; max: number
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between text-xs font-semibold text-emerald-700">
+      <div className="mb-3 flex items-center justify-between text-xs font-semibold text-[#BA5D2C]">
         <span>{min.toFixed(1)}%</span>
         <span>{max.toFixed(1)}%</span>
       </div>
@@ -389,19 +389,19 @@ function EngagementRateSlider({ min, max, onChange }: { min: number; max: number
           onChange(nextMin, nextMax);
         }}
       >
-        <Slider.Track className="relative h-1 grow rounded-full bg-zinc-200">
-          <Slider.Range className="absolute h-full rounded-full bg-emerald-500" />
+        <Slider.Track className="relative h-1 grow rounded-full bg-[#DDD5C7]">
+          <Slider.Range className="absolute h-full rounded-full bg-[#BA5D2C]" />
         </Slider.Track>
         <Slider.Thumb
-          className="block h-4 w-4 rounded-full bg-emerald-500 shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="block h-4 w-4 rounded-full bg-[#BA5D2C] shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BA5D2C]/30"
           aria-label="Minimum engagement rate"
         />
         <Slider.Thumb
-          className="block h-4 w-4 rounded-full bg-emerald-500 shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="block h-4 w-4 rounded-full bg-[#BA5D2C] shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BA5D2C]/30"
           aria-label="Maximum engagement rate"
         />
       </Slider.Root>
-      <div className="mt-1 flex justify-between text-[10px] text-zinc-600">
+      <div className="mt-1 flex justify-between text-[10px] text-[#7A6E65]">
         <span>{floor.toFixed(1)}%</span>
         <span>{ceiling.toFixed(1)}%</span>
       </div>
