@@ -37,12 +37,10 @@ interface BookingBriefBody {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// Placeholders — replace with a verified Resend sending domain / real desk
-// inbox before this goes live. Documented here rather than left unset so a
-// misconfigured deploy fails loudly (see the RESEND_API_KEY guard below)
-// instead of silently mailing nobody.
-const FALLBACK_NOTIFICATION_EMAIL = 'bookings@pulsegridos.com';
-const NOTIFICATION_FROM_ADDRESS = 'PulseGrid Talent Desk <briefs@pulsegridos.com>';
+// Sends from the `send` subdomain — that's where this project's verified
+// Resend MX/SPF records actually live in Vercel, not the apex domain.
+const NOTIFICATION_FROM_ADDRESS = 'PulseGrid Talent Desk <briefs@send.pulsegridos.com>';
+const FALLBACK_NOTIFICATION_EMAIL = 'krishnacq20@gmail.com';
 
 function errorResponse(status: number, error: string, message: string): NextResponse {
   return NextResponse.json({ error, message }, { status });
@@ -155,14 +153,16 @@ async function sendBriefNotification(brief: {
 
   try {
     const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: NOTIFICATION_FROM_ADDRESS,
       to: recipient,
       subject,
       text,
     });
     if (error) {
-      console.error(`[booking-brief notification] Resend send failed for brief ${brief.briefId}:`, error);
+      console.error('[Resend Error]:', error);
+    } else {
+      console.log('[Resend Success]: Email sent id:', data?.id);
     }
   } catch (err) {
     // Never let a notification failure fail the actual brief submission —
