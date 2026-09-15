@@ -71,8 +71,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     status: 200,
     headers: {
       'Content-Type': contentType,
-      // Instagram's own URLs carry a baked-in expiry (~1-2 weeks) —
-      // caching shorter than that is always safe.
+      // Instagram's own URLs carry a baked-in expiry — confirmed in
+      // production to be as short as ~5 days, not the ~1-2 weeks this
+      // comment used to assume (see DEFAULT_STALE_DAYS in
+      // lib/ingest/stale-refresh.ts, tightened for the same reason).
+      // 1hr caching here is still comfortably safe either way.
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   });

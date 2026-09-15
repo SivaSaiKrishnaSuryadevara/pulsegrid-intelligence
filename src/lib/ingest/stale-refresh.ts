@@ -24,7 +24,16 @@ import type { EntityDetails, EntityType, MetroHub, PrimaryNiche } from '@/types/
 import { InstagramIngestWorker, type ScrapedCreatorPayload } from '@/workers/ingest-worker';
 
 export const PROFILE_SCRAPER_ACTOR_ID = 'apify/instagram-profile-scraper';
-export const DEFAULT_STALE_DAYS = 14;
+/**
+ * Originally 14, on an assumption that Instagram's signed CDN URLs (the
+ * `avatar_url`/`mediaProofs[].displayUrl` fields — see media-proxy/route.ts)
+ * stay valid for ~1-2 weeks. Confirmed wrong in production: a profile's
+ * avatar URL 403'd after only 5 days. 4 keeps every profile's images
+ * refreshed with a safety margin before that real expiry, paired with the
+ * cron cadence in vercel.json running more often than this threshold so a
+ * creator is never stale for much longer than 4 days in practice.
+ */
+export const DEFAULT_STALE_DAYS = 4;
 export const DEFAULT_REFRESH_BATCH_LIMIT = 100;
 
 export interface StaleCreatorRow {
