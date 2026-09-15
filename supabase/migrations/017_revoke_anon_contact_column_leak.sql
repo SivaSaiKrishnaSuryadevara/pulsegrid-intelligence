@@ -1,0 +1,28 @@
+-- =====================================================================================
+-- PulseGrid Intelligence — URGENT Additive Migration
+-- 017_revoke_anon_contact_column_leak.sql
+--
+-- Live, active data leak, confirmed in production and unrelated to
+-- anything in this session's other work: `anon` (the public key embedded
+-- in every browser bundle — no auth required to use it) currently has
+-- unrestricted SELECT on production_entities, direct_booking_email and
+-- direct_booking_phone included. Anyone can read every creator's direct
+-- contact info via a raw PostgREST call, completely bypassing the
+-- unlock-contact credit paywall (POST /api/creators/[id]/unlock-contact),
+-- without ever touching the app UI. No migration in this repo granted
+-- this — the live database has drifted from tracked migration history,
+-- almost certainly via a change made directly in the Supabase Dashboard.
+--
+-- This REVOKE closes the leak at the column-privilege layer regardless of
+-- whatever granted the broader access (a stray table-level GRANT, RLS
+-- disabled on this table, or something else not visible from migration
+-- files alone) — column privileges are enforced independently of RLS, so
+-- this holds even if the underlying misconfiguration is never fully
+-- identified. Every other column stays exactly as accessible as it was;
+-- this does not touch primary_metro/follower_count/etc.
+--
+-- Run this BEFORE 016 (or in either order — they don't depend on each
+-- other, but this one is the urgent one).
+-- =====================================================================================
+
+revoke select (direct_booking_email, direct_booking_phone) on public.production_entities from anon;
