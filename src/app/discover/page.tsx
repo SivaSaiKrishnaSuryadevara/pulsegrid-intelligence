@@ -410,7 +410,19 @@ function TopNavbar({
 }) {
   return (
     <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#DDD5C7] bg-[#F7F4EE]/90 px-4 backdrop-blur-md sm:px-6">
-      <div className="flex items-center gap-2">
+      {/*
+        Plain <a>, not next/link's <Link> — deliberate. Confirmed via live
+        testing that Link's client-side soft-navigation silently no-ops
+        when clicked from this page's fully-loaded authenticated state
+        (zero pushState/framenavigated activity, no thrown error — Next's
+        router-internal issue, not a Link markup problem: the exact same
+        Link works fine elsewhere on this file, and a raw injected <a>
+        navigates away from this same page reliably). A plain anchor does
+        a real browser navigation, sidestepping whatever internal router
+        state Link's transition is getting stuck on.
+      */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate, see comment above */}
+      <a href="/" className="flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#BA5D2C]/30 bg-[#BA5D2C]/10">
           <Sparkles className="h-4 w-4 text-[#BA5D2C]" />
         </div>
@@ -418,7 +430,7 @@ function TopNavbar({
           PULSEGRID<sup className="text-[9px]">™</sup>{' '}
           <span className="hidden font-normal text-[#7A6E65] sm:inline">| Event Talent &amp; Media Intelligence</span>
         </span>
-      </div>
+      </a>
 
       <div className="flex items-center gap-2">
         <button

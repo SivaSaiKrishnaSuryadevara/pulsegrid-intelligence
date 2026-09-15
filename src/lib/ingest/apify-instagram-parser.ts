@@ -522,6 +522,94 @@ export function inferLocality(rawSignalText: string): LocalityMatch | null {
 }
 
 // =====================================================================================
+// US residency signal — required for candidates whose metro would otherwise
+// be blindly inherited from a source/anchor account (tagged-network
+// discovery), rather than derived from the candidate's own hashtag or bio
+// city, per the metro-mislabeling case caught with a network-crawler
+// candidate: a real, verified, established Indian film-industry
+// choreographer (bio: "Indian Dance Choreographer" — no city named at all)
+// got tagged AUSTIN_TX purely because the tagging anchor happened to be
+// Austin-based, despite having no actual US residency/activity signal in
+// their own bio.
+// =====================================================================================
+
+/**
+ * India/Pakistan/Bangladesh COUNTRY or CITY names — deliberately city/
+ * country-level only, not state/region names like Punjab/Kerala/Gujarat
+ * (those already exist as heritage/style descriptors in
+ * CULTURAL_SIGNAL_PATTERNS and are routinely self-applied by US-based
+ * diaspora accounts, e.g. "Gujarati Garba group of DFW" — using them here
+ * would false-positive on exactly the legitimate local vendors this gate
+ * must not reject).
+ */
+const INTERNATIONAL_LOCATION_PATTERNS: RegExp[] = [
+  /\bindia\b/i,
+  /\bpakistan\b/i,
+  /\bbangladesh\b/i,
+  /\bdelhi\b/i,
+  /\bmumbai\b/i,
+  /\bhyderabad\b/i,
+  /\bbangalore\b/i,
+  /\bbengaluru\b/i,
+  /\bchennai\b/i,
+  /\bkolkata\b/i,
+  /\bpune\b/i,
+  /\bahmedabad\b/i,
+  /\bjaipur\b/i,
+  /\blahore\b/i,
+  /\bkarachi\b/i,
+  /\bislamabad\b/i,
+  /\bdhaka\b/i,
+];
+
+/**
+ * Country/state-level (not metro-specific) US signal — a bio that just
+ * says "USA," flies the 🇺🇸 flag, names a state without a tracked city, or
+ * gives a +1 number still counts as US-based. Confirmed necessary against
+ * two real false positives from the same batch that motivated this gate:
+ * "Indian Dancers in US 🇺🇸" (no `usa`/`u.s.a.`/`united states` token, only
+ * the bare "US" + flag emoji) and "PREMIUM DJ/MC 🪄TEXAS 🇺🇸" (a bare state
+ * name, not one of the specific cities SUBURB_TO_METRO tracks). State
+ * names are limited to the 5 target metros' states — this gate only needs
+ * to confirm "not obviously overseas," not resolve a specific metro.
+ */
+const US_COUNTRY_LEVEL_PATTERNS: RegExp[] = [
+  /\busa\b/i,
+  /\bu\.s\.a?\.?\b/i,
+  /\bunited states\b/i,
+  /\+1[\s.-]?\d{3}/,
+  /🇺🇸/,
+  /\btexas\b/i,
+  /\bvirginia\b/i,
+  /\bmaryland\b/i,
+  /\bnorth\s*carolina\b/i,
+  /\bsouth\s*carolina\b/i,
+];
+
+/** True when the signal text has ANY positive US-residency indicator — a specific tracked metro/suburb (inferLocality) or a generic country-level mention. */
+export function hasUsResidencySignal(rawSignalText: string): boolean {
+  if (inferLocality(rawSignalText) !== null) return true;
+  const signalText = splitCamelCase(rawSignalText).normalize('NFKD');
+  return US_COUNTRY_LEVEL_PATTERNS.some((pattern) => pattern.test(signalText));
+}
+
+/**
+ * True when the bio names an India/Pakistan/Bangladesh city or country AND
+ * carries no offsetting US signal — e.g. "Karimnagar" alone (no US
+ * mention) trips this, while "🇮🇳Chennai—Kochi—Bangalore🇺🇸Austin" does not
+ * (the explicit Austin mention offsets it — a common, legitimate diaspora
+ * bio pattern: heritage city alongside current US city). Distinct from
+ * `hasUsResidencySignal` so a caller can log the more specific "conflicting
+ * international location" reason instead of a generic "no US signal" one.
+ */
+export function hasConflictingInternationalLocation(rawSignalText: string): boolean {
+  const signalText = splitCamelCase(rawSignalText).normalize('NFKD');
+  const hasInternationalMarker = INTERNATIONAL_LOCATION_PATTERNS.some((pattern) => pattern.test(signalText));
+  if (!hasInternationalMarker) return false;
+  return !hasUsResidencySignal(rawSignalText);
+}
+
+// =====================================================================================
 // Telemetry derived from latestPosts
 // =====================================================================================
 

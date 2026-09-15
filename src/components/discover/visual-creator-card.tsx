@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { BadgeCheck, CheckCircle2, MapPin, UserCheck, UserPlus } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, UserCheck, UserPlus } from 'lucide-react';
 
 import { getAvailabilityBadge } from '@/lib/discover/availability';
 import { daysRemaining } from '@/lib/discover/blackout-helpers';
 import { cn } from '@/lib/cn';
 import { formatCompactNumber } from '@/lib/format';
 import { toDisplayableMediaUrl } from '@/lib/media-proxy';
-import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import type { CreatorCardModel } from '@/types/creator';
 
 export interface VisualCreatorCardProps {
@@ -53,7 +52,6 @@ function getMonogram(name: string): string {
 export function VisualCreatorCard({ creator, isOnRoster, onToggleRoster, onInspect, isDeskRevealed }: VisualCreatorCardProps) {
   const [coverFailed, setCoverFailed] = useState(false);
   const availability = getAvailabilityBadge(creator);
-  const metroMeta = METRO_LABELS[creator.primaryMetro];
   const [primaryConflict] = creator.activeBlackouts;
   const dialects = creator.secondaryLanguages.slice(0, 3);
 
@@ -102,11 +100,6 @@ export function VisualCreatorCard({ creator, isOnRoster, onToggleRoster, onInspe
         >
           {isOnRoster ? <UserCheck className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
         </button>
-
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-[#E5C378]/40 bg-[#1D1714]/70 px-2.5 py-1 text-[11px] font-semibold text-[#F0DCA6] backdrop-blur-sm">
-          <MapPin className="h-3 w-3" />
-          {creator.locality ?? metroMeta.shortLabel}
-        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3.5 p-5">

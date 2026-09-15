@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   AlertTriangle,
   Banknote,
@@ -166,7 +167,7 @@ export default async function LandingPage() {
     <main className="min-h-screen bg-[#F7F4EE] text-[#1D1714]">
       {/* Nav */}
       <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#DDD5C7] bg-[#F7F4EE]/90 px-4 backdrop-blur-md sm:px-6">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#BA5D2C]/30 bg-[#BA5D2C]/10">
             <Sparkles className="h-4 w-4 text-[#BA5D2C]" />
           </div>
@@ -176,7 +177,7 @@ export default async function LandingPage() {
               | Event Production &amp; Cultural Media Intelligence OS
             </span>
           </span>
-        </div>
+        </Link>
         {/* Hidden below sm: at narrow widths this pair wraps and gets clipped by the nav's fixed height — the identical CTA pair is already the first thing visible in the hero immediately below, so nothing is lost. */}
         <div className="hidden sm:block">
           <LandingCtas size="sm" />

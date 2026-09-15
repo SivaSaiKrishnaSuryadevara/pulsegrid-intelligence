@@ -34,7 +34,13 @@
  */
 
 import { fetchApifyDatasetItems, startApifyActorRun, waitForApifyRunToFinish } from '@/lib/ingest/apify-client';
-import { parseApifyProfileItem, resolveMetroHub, type RawApifyProfileItem } from '@/lib/ingest/apify-instagram-parser';
+import {
+  hasConflictingInternationalLocation,
+  hasUsResidencySignal,
+  parseApifyProfileItem,
+  resolveMetroHub,
+  type RawApifyProfileItem,
+} from '@/lib/ingest/apify-instagram-parser';
 import { classifyEntityTypesFallbackBatch } from '@/lib/ingest/llm-classifier';
 import { getServiceRoleClient } from '@/lib/supabase/service';
 import type { MetroHub } from '@/types/creator';
@@ -237,6 +243,8 @@ async function main(): Promise<void> {
   let totalRejectedCulture = 0;
   let totalRejectedFollowers = 0;
   let totalRejectedTransactionalLink = 0;
+  let totalRejectedInternationalLocation = 0;
+  let totalRejectedNoUsSignal = 0;
   let totalOtherErrors = 0;
 
   const chunks = chunk(candidates, args.chunkSize);
@@ -270,6 +278,25 @@ async function main(): Promise<void> {
       if (hasTransactionalLink(raw.externalUrl)) {
         console.log(`  [reject] ${handle}: bio links a ticketing/marketplace platform (${raw.externalUrl}) — promoter/box-office, not a vendor`);
         totalRejectedTransactionalLink += 1;
+        continue;
+      }
+
+      // A tagged-network candidate has no metro of its own the way a
+      // hashtag-discovered candidate does — without this check its metro
+      // would be silently inherited from whichever anchor tagged it,
+      // regardless of where the candidate actually lives or works. Caught
+      // in practice: an established India-based film choreographer with no
+      // US location in their own bio got labeled AUSTIN_TX purely because
+      // an Austin anchor tagged them.
+      const locationSignalText = `${raw.fullName ?? ''}\n${raw.biography ?? ''}`;
+      if (hasConflictingInternationalLocation(locationSignalText)) {
+        console.log(`  [reject] ${handle}: bio names an international (non-US) location with no offsetting US signal — not a local metro candidate`);
+        totalRejectedInternationalLocation += 1;
+        continue;
+      }
+      if (!hasUsResidencySignal(locationSignalText)) {
+        console.log(`  [reject] ${handle}: no US residency/location signal in bio — can't confirm local metro relevance, won't inherit anchor's metro blindly`);
+        totalRejectedNoUsSignal += 1;
         continue;
       }
 
@@ -322,6 +349,8 @@ async function main(): Promise<void> {
   console.log(`Candidate pool after filtering: ${candidates.length}`);
   console.log(`Candidates scraped: ${totalScraped}`);
   console.log(`Rejected — transactional/ticketing bio link: ${totalRejectedTransactionalLink}`);
+  console.log(`Rejected — conflicting international location: ${totalRejectedInternationalLocation}`);
+  console.log(`Rejected — no US residency signal: ${totalRejectedNoUsSignal}`);
   console.log(`Rejected — no cultural/entity signal: ${totalRejectedCulture}`);
   console.log(`Rejected — under follower floor: ${totalRejectedFollowers}`);
   console.log(`Other errors: ${totalOtherErrors}`);
