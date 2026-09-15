@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { AgencyPassModal } from '@/components/growth/agency-pass-modal';
+import { BookingBriefModal } from '@/components/booking-brief-modal';
 
 export interface LandingCtasProps {
   size?: 'sm' | 'md' | 'lg';
@@ -12,10 +12,13 @@ export interface LandingCtasProps {
 
 /**
  * "Access Talent Desk" (primary, solid raw-umber fill — opens
- * AgencyPassModal, the same lead-capture flow /discover uses) + "Review
- * Roster" (secondary stone-bordered ghost, -> /login, the actual gateway
- * to browsing the directory). One client component so the marketing page
- * itself can stay a server component.
+ * BookingBriefModal in generic/unassigned-creator mode, the zero-friction
+ * private-beta intake) + "Review Roster" (secondary stone-bordered ghost,
+ * -> /login, the actual gateway to browsing the directory). One client
+ * component so the marketing page itself can stay a server component.
+ * Was AgencyPassModal (a pricing-tier/lead-capture flow) before the
+ * private-beta pivot — that modal is still used elsewhere (the /discover
+ * credits paywall), just no longer the landing page's own primary CTA.
  */
 export function LandingCtas({ size = 'md', align = 'center' }: LandingCtasProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,7 +46,7 @@ export function LandingCtas({ size = 'md', align = 'center' }: LandingCtasProps)
           Review Roster
         </a>
       </div>
-      <AgencyPassModal open={modalOpen} onOpenChange={setModalOpen} trigger="manual" />
+      <BookingBriefModal open={modalOpen} onOpenChange={setModalOpen} />
     </>
   );
 }

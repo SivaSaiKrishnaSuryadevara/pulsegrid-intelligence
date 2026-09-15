@@ -5,6 +5,7 @@ import { BadgeCheck, CheckCircle2, UserCheck, UserPlus } from 'lucide-react';
 
 import { getAvailabilityBadge } from '@/lib/discover/availability';
 import { daysRemaining } from '@/lib/discover/blackout-helpers';
+import { getSpecialtyLabel } from '@/lib/discover/specialty';
 import { cn } from '@/lib/cn';
 import { formatCompactNumber } from '@/lib/format';
 import { toDisplayableMediaUrl } from '@/lib/media-proxy';
@@ -17,24 +18,6 @@ export interface VisualCreatorCardProps {
   /** Opens the full dossier drawer — the card's one decisive action; desk unlock now lives entirely inside the drawer. */
   onInspect: (creatorId: string) => void;
   isDeskRevealed: boolean;
-}
-
-/** Data-driven specialty label — real genre/style fields where the entity has them, not a fabricated sub-category. */
-function getSpecialtyLabel(creator: CreatorCardModel): string {
-  const details = creator.entityDetails;
-  switch (details.kind) {
-    case 'local_dj':
-      return details.genreTags?.[0] ? `${details.genreTags[0]} DJ` : 'Baraat DJ';
-    case 'stage_emcee':
-      return creator.secondaryLanguages[0] ? `${creator.secondaryLanguages[0]} Emcee` : 'Emcee / Host';
-    case 'dance_troupe':
-      return details.style ? `${details.style} Choreography` : 'Dance Troupe';
-    case 'event_planner':
-      return 'Event Planner';
-    case 'solo_creator':
-    default:
-      return 'Content Creator';
-  }
 }
 
 function getMonogram(name: string): string {

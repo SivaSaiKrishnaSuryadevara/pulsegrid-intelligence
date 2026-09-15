@@ -1,0 +1,23 @@
+-- =====================================================================================
+-- PulseGrid Intelligence — Additive Migration
+-- 014_grant_anon_insert_booking_briefs.sql
+--
+-- Migration 005 deliberately never granted `anon` table-level privileges on
+-- anything in `public` — every RLS policy through that point scoped access
+-- `to authenticated` only, and public reads went through the service-role
+-- client instead (see 005's own header comment). `booking_briefs` (013) is
+-- the first table that genuinely needs a real anon write path — the whole
+-- "zero-friction" point is a form posting straight to Supabase with no
+-- backend round-trip — but its `create policy ... to anon` RLS policy is
+-- inert without the underlying GRANT: RLS narrows an operation a role can
+-- already attempt at the table-privilege level, it doesn't substitute for
+-- one. Confirmed in production: an anon-key insert returned Postgres's own
+-- `permission denied for table booking_briefs`, not an RLS violation.
+--
+-- Scoped to just this one table's INSERT, not a blanket anon grant on all
+-- of `public` (which 005 explicitly avoided as a real widening of the
+-- security surface) — anon still has no SELECT/UPDATE/DELETE on
+-- booking_briefs, and no access at all to any other table.
+-- =====================================================================================
+
+grant insert on public.booking_briefs to anon;

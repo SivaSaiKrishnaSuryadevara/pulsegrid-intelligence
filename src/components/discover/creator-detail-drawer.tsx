@@ -22,12 +22,14 @@ import {
 import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/pseo/avatar';
+import { BookingBriefModal } from '@/components/booking-brief-modal';
 import { ConciergeRequestModal } from '@/components/discover/concierge-request-modal';
 import { OutreachBriefForm } from '@/components/discover/outreach-brief-form';
 import { EXCLUSIVITY_TONE, getAvailabilityBadge } from '@/lib/discover/availability';
 import { daysRemaining, humanizeSlug } from '@/lib/discover/blackout-helpers';
 import { NICHE_DISPLAY_LABELS, REP_TYPE_DISPLAY_LABELS, VENUE_SCALE_LABELS } from '@/lib/discover/constants';
 import { type BlackoutHistoryEntry, fetchCreatorBlackoutHistory } from '@/lib/discover/queries';
+import { getSpecialtyLabel } from '@/lib/discover/specialty';
 import { formatCompactNumber, formatPercent, formatRateRange } from '@/lib/format';
 import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import { getBrowserSupabaseClient } from '@/lib/supabase/client';
@@ -73,6 +75,7 @@ export function CreatorDetailDrawer({
   const [blackoutHistory, setBlackoutHistory] = useState<BlackoutHistoryEntry[]>([]);
   const [historyLoadError, setHistoryLoadError] = useState<string | null>(null);
   const [conciergeOpen, setConciergeOpen] = useState(false);
+  const [briefModalOpen, setBriefModalOpen] = useState(false);
 
   const creatorId = creator?.id ?? null;
 
@@ -87,6 +90,7 @@ export function CreatorDetailDrawer({
     setHistoryLoadError(null);
     setUnlockState(isDeskRevealed ? 'unlocking' : 'locked');
     setConciergeOpen(false);
+    setBriefModalOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creatorId]);
 
@@ -174,7 +178,7 @@ export function CreatorDetailDrawer({
                 Detailed audience telemetry, brand history, and representation details for {creator.displayName}.
               </Dialog.Description>
 
-              <DrawerHeader creator={creator} onClose={onClose} />
+              <DrawerHeader creator={creator} onClose={onClose} onSubmitBrief={() => setBriefModalOpen(true)} />
 
               <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
                 <Tabs.List className="flex border-b border-zinc-200 px-4">
@@ -210,6 +214,17 @@ export function CreatorDetailDrawer({
               </Tabs.Root>
 
               <ConciergeRequestModal open={conciergeOpen} onOpenChange={setConciergeOpen} creator={creator} />
+              <BookingBriefModal
+                open={briefModalOpen}
+                onOpenChange={setBriefModalOpen}
+                creator={{
+                  handle: creator.handle,
+                  displayName: creator.displayName,
+                  avatarUrl: creator.avatarUrl,
+                  metro: creator.primaryMetro,
+                  specialty: getSpecialtyLabel(creator),
+                }}
+              />
             </>
           )}
         </Dialog.Content>
@@ -235,7 +250,15 @@ function describeUnlockFailure(reason: Extract<ContactUnlockPayload, { success: 
 // Header
 // =====================================================================================
 
-function DrawerHeader({ creator, onClose }: { creator: CreatorCardModel; onClose: () => void }) {
+function DrawerHeader({
+  creator,
+  onClose,
+  onSubmitBrief,
+}: {
+  creator: CreatorCardModel;
+  onClose: () => void;
+  onSubmitBrief: () => void;
+}) {
   const availability = getAvailabilityBadge(creator);
   const metroLabel = METRO_LABELS[creator.primaryMetro].label;
   const nicheLabel = NICHE_DISPLAY_LABELS[creator.primaryNiche];
@@ -284,6 +307,14 @@ function DrawerHeader({ creator, onClose }: { creator: CreatorCardModel; onClose
         <availability.Icon className="h-3.5 w-3.5" />
         {availability.label}
       </span>
+
+      <button
+        type="button"
+        onClick={onSubmitBrief}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D1714] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-zinc-800"
+      >
+        Submit Event Brief (Complimentary Beta)
+      </button>
     </div>
   );
 }
