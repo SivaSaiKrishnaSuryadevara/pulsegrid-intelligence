@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { AlertCircle, Building2, Command, Download, LayoutGrid, ListFilter, LogIn, Sparkles, Users } from 'lucide-react';
 
 import { AgencyPassModal, type AgencyPassModalProps } from '@/components/growth/agency-pass-modal';
@@ -20,7 +19,7 @@ import { METRO_LABELS } from '@/lib/pseo/directory-config';
 import { getBrowserSupabaseClient } from '@/lib/supabase/client';
 import { ENTITY_TYPES, type ContactUnlockPayload, type CreatorCardModel, type EntityType, type FilterCriteria } from '@/types/creator';
 
-type LoadState = 'checking-auth' | 'unauthenticated' | 'loading' | 'ready' | 'error';
+type LoadState = 'checking-auth' | 'loading' | 'ready' | 'error';
 type ViewMode = 'grid' | 'table';
 
 const SEARCH_INPUT_ID = 'discover-quick-search';
@@ -53,16 +52,18 @@ export default function DiscoverPage() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user) {
-          if (!cancelled) setLoadState('unauthenticated');
-          return;
-        }
-
         if (!cancelled) setLoadState('loading');
 
+        // Public browsing — an anonymous visitor still sees the full
+        // catalog (migration 016 grants `anon` the same read access
+        // `authenticated` already had, minus the two contact columns);
+        // there's just no agency profile to fetch, so credits/agency name
+        // stay at their zero-value defaults. Actions that need a real
+        // account (unlocking a desk, exporting a roster) prompt sign-in at
+        // the point of use rather than gating the whole page up front.
         const [creators, agencyProfile] = await Promise.all([
           fetchDiscoveryCreators(supabase),
-          fetchAgencyProfile(supabase, user.id),
+          user ? fetchAgencyProfile(supabase, user.id) : Promise.resolve({ creditsRemaining: 0, agencyName: null }),
         ]);
 
         if (cancelled) return;
@@ -223,20 +224,6 @@ export default function DiscoverPage() {
 
   if (loadState === 'checking-auth') {
     return <FullScreenMessage icon={LogIn} title="Loading Discover…" />;
-  }
-
-  if (loadState === 'unauthenticated') {
-    return (
-      <FullScreenMessage icon={LogIn} title="Sign in to open Discover">
-        <p className="mt-2 text-sm text-[#7A6E65]">The discovery cockpit is available to signed-in agency accounts only.</p>
-        <Link
-          href="/login?next=/discover"
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-[#1D1714] px-5 py-2.5 text-sm font-semibold text-[#F7F4EE] shadow-sm transition-all hover:bg-[#322822]"
-        >
-          Sign In
-        </Link>
-      </FullScreenMessage>
-    );
   }
 
   if (loadState === 'error') {
@@ -415,9 +402,11 @@ function TopNavbar({
         testing that Link's client-side soft-navigation silently no-ops
         when clicked from this page's fully-loaded authenticated state
         (zero pushState/framenavigated activity, no thrown error — Next's
-        router-internal issue, not a Link markup problem: the exact same
-        Link works fine elsewhere on this file, and a raw injected <a>
-        navigates away from this same page reliably). A plain anchor does
+        router-internal issue, not a Link markup problem: the same Link
+        markup worked fine for this file's old "Sign in to open Discover"
+        link (removed once /discover became publicly browsable — see
+        migration 016), and a raw injected <a> navigates away from this
+        same page reliably). A plain anchor does
         a real browser navigation, sidestepping whatever internal router
         state Link's transition is getting stuck on.
       */}
