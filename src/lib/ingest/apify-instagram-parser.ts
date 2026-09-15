@@ -71,6 +71,18 @@ export interface RawApifyProfileItem {
   followersCount?: number | null;
   verified?: boolean | null;
   latestPosts?: RawApifyPost[] | null;
+  /**
+   * Set by the scraper instead of real profile data when Instagram blocks
+   * access (e.g. "Restricted profile" — an age/sensitivity gate, not a
+   * deleted or renamed account). Every other field is absent when this is
+   * set, so `followersCount ?? 0` would otherwise silently read as a real
+   * zero-follower account — confirmed in production: a refresh run failed
+   * 3 real, active handles against the 300-follower floor with "got 0"
+   * when their actual follower counts were simply inaccessible that scrape,
+   * not zero. Checked first in both parse functions below, before any
+   * other field is read.
+   */
+  error?: string | null;
 }
 
 // =====================================================================================
@@ -737,6 +749,9 @@ export function parseApifyProfileItem(raw: RawApifyProfileItem, worker: Instagra
     return { ok: false, identifier: '(missing username)', error: 'username is required' };
   }
   const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  if (raw.error) {
+    return { ok: false, identifier: handle, error: `Apify reported an item-level error ("${raw.error}") — profile inaccessible/restricted this scrape, skipped` };
+  }
   const bio = raw.biography ?? '';
   const signalText = `${raw.fullName ?? ''}\n${bio}`;
   const inferredType = inferEntityType(signalText);
@@ -852,6 +867,9 @@ export function parseApifyProfileItemForRefresh(
     return { ok: false, identifier: '(missing username)', error: 'username is required' };
   }
   const handle = rawUsername.trim().replace(/^@/, '').toLowerCase();
+  if (raw.error) {
+    return { ok: false, identifier: handle, error: `Apify reported an item-level error ("${raw.error}") — profile inaccessible/restricted this scrape, skipped (existing data left untouched, will retry next cycle)` };
+  }
   const bio = raw.biography ?? '';
   const signalText = `${raw.fullName ?? ''}\n${bio}`;
   const recentPosts = toRecentPosts(raw.latestPosts);
