@@ -37,11 +37,8 @@ interface BookingBriefBody {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// TEMPORARY: send@pulsegridos.com's DNS is still verifying in Resend —
-// using Resend's own shared sandbox sender in the meantime so notifications
-// keep going out instead of failing outright. Swap back to
-// briefs@send.pulsegridos.com once that domain shows verified.
-const NOTIFICATION_FROM_ADDRESS = 'PulseGrid Talent Desk <onboarding@resend.dev>';
+// send.pulsegridos.com is verified in Resend — this project's real sender.
+const NOTIFICATION_FROM_ADDRESS = 'PulseGrid Talent Desk <briefs@send.pulsegridos.com>';
 const FALLBACK_NOTIFICATION_EMAIL = 'krishnacq20@gmail.com';
 
 function errorResponse(status: number, error: string, message: string): NextResponse {
