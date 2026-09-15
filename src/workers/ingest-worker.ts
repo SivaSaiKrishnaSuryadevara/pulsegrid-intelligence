@@ -61,6 +61,16 @@ const WRITE_CONCURRENCY = 10;
  * followers) so it only cuts the empty-shell profiles, not small-but-real
  * accounts. Seed scripts always pass five- and six-figure follower counts,
  * so this only bites on the live Apify discovery path.
+ *
+ * Deliberately NOT applied on refresh (see `ingestCreatorBatch`'s
+ * `skipFollowerFloor` option) — a handle already in `production_entities`
+ * already cleared this bar (or a human curated it in directly) at
+ * ingestion time; re-litigating that on every refresh cycle against a
+ * naturally fluctuating follower count (Instagram bot-follower purges,
+ * organic small accounts) only means the profile's cover photo/avatar can
+ * never be refreshed again once it dips below 300, even though nothing
+ * about the profile itself changed. Confirmed in production: 8 real,
+ * on-brand DFW vendors (17-273 followers) got stuck exactly like this.
  */
 const MIN_FOLLOWER_COUNT_FOR_INGEST = 300;
 
@@ -558,7 +568,8 @@ export class InstagramIngestWorker {
 
   async ingestCreatorBatch(
     supabaseClient: SupabaseClient,
-    payload: ScrapedCreatorPayload[]
+    payload: ScrapedCreatorPayload[],
+    opts: { skipFollowerFloor?: boolean } = {}
   ): Promise<IngestBatchResult> {
     if (!Array.isArray(payload) || payload.length === 0) {
       return { totalProcessed: 0, succeeded: 0, failed: 0, errors: [] };
@@ -569,7 +580,7 @@ export class InstagramIngestWorker {
 
     for (const item of payload) {
       const identifier = item?.handle ?? '(missing handle)';
-      const problems = this.validateScrapedCreatorPayload(item);
+      const problems = this.validateScrapedCreatorPayload(item, opts);
       if (problems.length > 0) {
         errors.push({ identifier, stage: 'validation', message: problems.join('; ') });
         continue;
@@ -705,7 +716,7 @@ export class InstagramIngestWorker {
   // Validation
   // -----------------------------------------------------------------------------------
 
-  private validateScrapedCreatorPayload(payload: ScrapedCreatorPayload): string[] {
+  private validateScrapedCreatorPayload(payload: ScrapedCreatorPayload, opts: { skipFollowerFloor?: boolean } = {}): string[] {
     const problems: string[] = [];
 
     if (!payload || typeof payload !== 'object') {
@@ -729,9 +740,11 @@ export class InstagramIngestWorker {
     if (payload.entityType != null && !ENTITY_TYPES.includes(payload.entityType)) {
       problems.push(`entityType "${String(payload.entityType)}" is not a recognized entity_type`);
     }
-    if (payload.followerCount == null || payload.followerCount < MIN_FOLLOWER_COUNT_FOR_INGEST) {
+    if (payload.followerCount == null || payload.followerCount < 0) {
+      problems.push(`followerCount must be a non-negative number (got ${payload.followerCount ?? 'null'})`);
+    } else if (!opts.skipFollowerFloor && payload.followerCount < MIN_FOLLOWER_COUNT_FOR_INGEST) {
       problems.push(
-        `followerCount must be at least ${MIN_FOLLOWER_COUNT_FOR_INGEST} (got ${payload.followerCount ?? 'null'}) — below PulseGrid's verified-creator bar`
+        `followerCount must be at least ${MIN_FOLLOWER_COUNT_FOR_INGEST} (got ${payload.followerCount}) — below PulseGrid's verified-creator bar`
       );
     }
     if (payload.engagementRate != null && (payload.engagementRate < 0 || payload.engagementRate > 100)) {

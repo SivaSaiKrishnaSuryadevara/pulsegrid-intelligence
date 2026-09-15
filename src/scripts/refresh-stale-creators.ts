@@ -115,7 +115,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`\nRefreshing ${payloads.length} creator(s) in production_entities...`);
-  const result = await worker.ingestCreatorBatch(supabase, payloads);
+  // skipFollowerFloor: these handles are already in production_entities —
+  // re-applying the new-candidate quality floor on every refresh would
+  // permanently strand any already-vetted profile whose follower count
+  // dips below it (see MIN_FOLLOWER_COUNT_FOR_INGEST's doc comment).
+  const result = await worker.ingestCreatorBatch(supabase, payloads, { skipFollowerFloor: true });
   console.log(`  succeeded: ${result.succeeded}/${result.totalProcessed}`);
   for (const err of result.errors) {
     console.log(`  [${err.stage}] ${err.identifier}: ${err.message}`);

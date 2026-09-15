@@ -101,9 +101,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const worker = new InstagramIngestWorker();
   const { payloads, errors: parseErrors } = buildRefreshPayloads(rawItems, knownRows, worker);
 
+  // skipFollowerFloor: same reasoning as the CLI refresh script — these
+  // handles are already-vetted existing rows, not new candidates.
   const ingestResult =
     payloads.length > 0
-      ? await worker.ingestCreatorBatch(supabase, payloads)
+      ? await worker.ingestCreatorBatch(supabase, payloads, { skipFollowerFloor: true })
       : { totalProcessed: 0, succeeded: 0, failed: 0, errors: [] };
 
   return NextResponse.json({
