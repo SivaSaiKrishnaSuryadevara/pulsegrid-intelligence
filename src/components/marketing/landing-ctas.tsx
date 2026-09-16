@@ -14,9 +14,10 @@ export interface LandingCtasProps {
  * "Access Talent Desk" (primary, solid raw-umber fill — opens
  * BookingBriefModal in generic/unassigned-creator mode, the zero-friction
  * private-beta intake) + "Review Roster" (secondary stone-bordered ghost,
- * -> /login, the actual gateway to browsing the directory). One client
- * component so the marketing page itself can stay a server component.
- * Was AgencyPassModal (a pricing-tier/lead-capture flow) before the
+ * -> /discover directly — no login wall since /discover became publicly
+ * browsable, see migration 016). One client component so the marketing
+ * page itself can stay a server component. The primary button was
+ * AgencyPassModal (a pricing-tier/lead-capture flow) before the
  * private-beta pivot — that modal is still used elsewhere (the /discover
  * credits paywall), just no longer the landing page's own primary CTA.
  */
@@ -40,7 +41,7 @@ export function LandingCtas({ size = 'md', align = 'center' }: LandingCtasProps)
           Access Talent Desk
         </button>
         <a
-          href="/login"
+          href="/discover"
           className={`rounded-full border border-[#DDD5C7] font-semibold text-[#1D1714] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BA5D2C]/50 hover:text-[#BA5D2C] active:translate-y-0 ${sizeClasses}`}
         >
           Review Roster

@@ -11,6 +11,18 @@
  * `CreatorCardModel` still requires those two fields per its `CreatorProfile`
  * base type, so they're set to `null` here rather than omitted from the
  * object, which is fine: they're simply never populated client-side.
+ *
+ * Queries `discover_creators` (migration 018), a view over
+ * `production_entities` that never selects the two contact columns at
+ * all, rather than the base table directly — belt-and-suspenders on top
+ * of this file's own column list. A stray table-level GRANT on the base
+ * table (outside tracked migration history) once made the app's own
+ * column restriction here meaningless: anon/authenticated could still
+ * read the raw table's sensitive columns via a direct PostgREST call
+ * bypassing this query entirely. The view is what actually enforces it
+ * now — those columns can't appear in its output no matter how it's
+ * queried, regardless of what table-level grants exist or get added
+ * later on the base table.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -94,7 +106,7 @@ export async function fetchDiscoveryCreators(supabase: SupabaseClient): Promise<
   const today = new Date().toISOString().slice(0, 10);
 
   const [creatorsResult, blackoutsResult] = await Promise.all([
-    supabase.from('production_entities').select(DISCOVERY_COLUMNS),
+    supabase.from('discover_creators').select(DISCOVERY_COLUMNS),
     supabase
       .from('creator_category_blackouts')
       .select('creator_id, brand_name, category_slug, blackout_end_date')
