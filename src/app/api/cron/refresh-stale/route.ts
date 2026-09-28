@@ -1,7 +1,7 @@
 /**
  * GET /api/cron/refresh-stale
  *
- * Vercel Cron target — see vercel.json (weekly, Sundays 03:00 UTC). Finds
+ * Vercel Cron target — see vercel.json (every 2 days, 03:00 UTC). Finds
  * creators whose `last_refreshed_at` has aged past the staleness cutoff
  * and starts an `apify/instagram-profile-scraper` run over their handles,
  * with an ad-hoc webhook attached pointing back at
@@ -28,6 +28,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { startApifyActorRun } from '@/lib/ingest/apify-client';
 import { DEFAULT_REFRESH_BATCH_LIMIT, DEFAULT_STALE_DAYS, PROFILE_SCRAPER_ACTOR_ID, queryStaleCreators } from '@/lib/ingest/stale-refresh';
+import { SITE_URL } from '@/lib/pseo/directory-config';
 import { getServiceRoleClient } from '@/lib/supabase/service';
 
 function errorResponse(status: number, error: string, message: string): NextResponse {
@@ -80,13 +81,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const handles = staleRows.map((row) => row.handle);
-  const { origin } = request.nextUrl;
 
   try {
     const run = await startApifyActorRun(PROFILE_SCRAPER_ACTOR_ID, { usernames: handles }, apiToken, [
       {
         eventTypes: ['ACTOR.RUN.SUCCEEDED'],
-        requestUrl: `${origin}/api/webhooks/apify-refresh`,
+        // SITE_URL, not request.nextUrl.origin — confirmed live that
+        // Vercel Cron invokes this route via a per-deployment
+        // *.vercel.app alias that sits behind Vercel's own Deployment
+        // Protection wall (every call Apify made back to that origin
+        // 401'd with "Protected deployment", not this route's own
+        // x-apify-secret check). The stable custom domain isn't
+        // protected — /api/ingest/discover's persistent webhook already
+        // proves that path works, hardcoded the same way when it was
+        // created.
+        requestUrl: `${SITE_URL}/api/webhooks/apify-refresh`,
         headersTemplate: JSON.stringify({ 'x-apify-secret': webhookSecret }),
       },
     ]);
